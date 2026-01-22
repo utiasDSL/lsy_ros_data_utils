@@ -256,11 +256,11 @@ namespace lsy_ros_data_utils::rosbag {
 #endif
 
 #ifdef HAVE_ZED_MSGS
-    register_type<zed_msgs::msg::HealthStatusStamped>("zed_msgs::msg::HealthStatusStamped");
-    register_type<zed_msgs::msg::Heartbeat>("zed_msgs::msg::Heartbeat");
-    register_type<zed_msgs::msg::GnssFusionStatus>("zed_msgs::msg::GnssFusionStatus");
-    register_type<zed_msgs::msg::PosTrackStatus>("zed_msgs::msg::PosTrackStatus");
-    register_type<zed_msgs::msg::SvoStatus>("zed_msgs::msg::SvoStatus");
+    register_type<zed_msgs::msg::HealthStatusStamped>("zed_msgs/msg/HealthStatusStamped");
+    register_type<zed_msgs::msg::Heartbeat>("zed_msgs/msg/Heartbeat");
+    register_type<zed_msgs::msg::GnssFusionStatus>("zed_msgs/msg/GnssFusionStatus");
+    register_type<zed_msgs::msg::PosTrackStatus>("zed_msgs/msg/PosTrackStatus");
+    register_type<zed_msgs::msg::SvoStatus>("zed_msgs/msg/SvoStatus");
 #endif
 
 
