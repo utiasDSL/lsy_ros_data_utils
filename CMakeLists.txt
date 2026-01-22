@@ -35,10 +35,10 @@ set(AMENT_DEPENDENCIES_MSG
 
 # custom ros messages
 foreach (msg_pkg IN ITEMS
-        livox_ros_driver2
-        septentrio_gnss_driver
-        mavros_msgs
-        zed_msgs
+        "livox_ros_driver2"
+        "septentrio_gnss_driver"
+        "mavros_msgs"
+        "zed_msgs"
 )
     find_package(${msg_pkg} QUIET)
     if (${msg_pkg}_FOUND)

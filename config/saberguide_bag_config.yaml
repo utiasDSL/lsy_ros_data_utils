@@ -15,7 +15,7 @@ bags:
     uri_with_datetime: true
     topics:
       - name: "/mavros/altitude"
-        type: "mavros_msg/msg/Altitude"
+        type: "mavros_msgs/msg/Altitude"
         qos: "default"
         mode: "generic"
         monitor:
@@ -37,56 +37,56 @@ bags:
           warn_below_hz: 30.
       - name: "/mavros/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 50.0
           warn_below_hz: 30.
       - name: "/mavros/imu/data"
         type: "sensor_msgs/msg/Imu"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
       - name: "/mavros/imu/mag"
         type: "sensor_msgs/msg/MagneticField"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.
       - name: "/mavros/imu/temperature_imu"
         type: "sensor_msgs/msg/Temperature"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 10.0
           warn_below_hz: 8.
       - name: "/mavros/local_position/odom"
         type: "nav_msgs/msg/Odometry"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 30.0
           warn_below_hz: 15.
       - name: "/mavros/local_position/pose"
         type: "geometry_msgs/msg/PoseStamped"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 30.0
           warn_below_hz: 15.
       - name: "/mavros/local_position/velocity_body"
         type: "geometry_msgs/msg/TwistStamped"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 30.0
           warn_below_hz: 15.
       - name: "/mavros/local_position/velocity_local"
         type: "geometry_msgs/msg/TwistStamped"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 30.0
@@ -114,14 +114,14 @@ bags:
           warn_below_hz: .8
       - name: "/mavros/vision_pose/pose"
         type: "geometry_msgs/msg/PoseStamped"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 200.0
           warn_below_hz: 100.
       - name: "/mavros/imu/temperature_imu"
         type: "sensor_msgs/msg/Temperature"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 10.0
