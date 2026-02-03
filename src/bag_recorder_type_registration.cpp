@@ -98,6 +98,9 @@
 #include <septentrio_gnss_driver/msg/sat_info.hpp>
 #include <septentrio_gnss_driver/msg/sat_visibility.hpp>
 #include <septentrio_gnss_driver/msg/quality_ind.hpp>
+#include <septentrio_gnss_driver/msg/vel_cov_cartesian.hpp>
+#include <septentrio_gnss_driver/msg/vel_cov_geodetic.hpp>
+#include <septentrio_gnss_driver/msg/receiver_time.hpp>
 #endif
 
 #ifdef HAVE_MAVROS_MSGS
@@ -127,6 +130,10 @@
 #include <zed_msgs/msg/gnss_fusion_status.hpp>
 #include <zed_msgs/msg/pos_track_status.hpp>
 #include <zed_msgs/msg/svo_status.hpp>
+#endif
+
+#ifdef HAVE_GPS_MSGS
+#include <gps_msgs/msg/gps_fix.hpp>
 #endif
 
 
@@ -166,6 +173,10 @@ namespace lsy_ros_data_utils::rosbag {
 
     register_type<tf2_msgs::msg::TFMessage>("tf2_msgs/msg/TFMessage");
 
+#ifdef HAVE_GPS_MSGS
+    register_type<gps_msgs::msg::GPSFix>("gps_msgs/msg/GPSFix");
+#endif
+
     // custom message
 #ifdef HAVE_LIVOX_ROS_DRIVER2
     register_type<livox_ros_driver2::msg::CustomMsg>("livox_ros_driver2/msg/CustomMsg");
@@ -174,7 +185,7 @@ namespace lsy_ros_data_utils::rosbag {
 
 #ifdef HAVE_SEPTENTRIO_GNSS_DRIVER
     register_type<septentrio_gnss_driver::msg::BlockHeader>("septentrio_gnss_driver/msg/BlockHeader");
-    register_type<septentrio_gnss_driver::msg::AttEuler>("septentrio_gnss_driver/msg/AttCovEuler");
+    register_type<septentrio_gnss_driver::msg::AttEuler>("septentrio_gnss_driver/msg/AttEuler");
     register_type<septentrio_gnss_driver::msg::AttCovEuler>("septentrio_gnss_driver/msg/AttCovEuler");
     register_type<septentrio_gnss_driver::msg::AuxAntPositions>("septentrio_gnss_driver/msg/AuxAntPositions");
     register_type<septentrio_gnss_driver::msg::BDSAlm>("septentrio_gnss_driver/msg/BDSAlm");
@@ -215,22 +226,9 @@ namespace lsy_ros_data_utils::rosbag {
     register_type<septentrio_gnss_driver::msg::SatInfo>("septentrio_gnss_driver/msg/SatInfo");
     register_type<septentrio_gnss_driver::msg::SatVisibility>("septentrio_gnss_driver/msg/SatVisibility");
     register_type<septentrio_gnss_driver::msg::QualityInd>("septentrio_gnss_driver/msg/QualityInd");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
-    register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
+    register_type<septentrio_gnss_driver::msg::VelCovCartesian>("septentrio_gnss_driver/msg/VelCovCartesian");
+    register_type<septentrio_gnss_driver::msg::VelCovGeodetic>("septentrio_gnss_driver/msg/VelCovGeodetic");
+    register_type<septentrio_gnss_driver::msg::ReceiverTime>("septentrio_gnss_driver/msg/ReceiverTime");
 #endif
 
 #ifdef HAVE_MAVROS_MSGS

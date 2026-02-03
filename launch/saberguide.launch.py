@@ -48,7 +48,7 @@ os.environ["RCUTILS_COLORIZED_OUTPUT"] = "1"
 default_config = os.path.join(
     get_package_share_directory('lsy_ros_data_utils'),
     'config',
-    'bag_recorder_config.yaml'
+    'saberguide_bag_config.yaml'
 )
 
 
