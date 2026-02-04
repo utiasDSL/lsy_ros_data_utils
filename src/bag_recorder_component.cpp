@@ -129,7 +129,7 @@ namespace lsy_ros_data_utils::rosbag {
       throw std::runtime_error("YAML must contain 'bags' as a sequence.");
     }
 
-    std::cout << config << std::endl;
+   // std::cout << config << std::endl;
     // monitor (optional)
     monitor_cfg_ = MonitorCfg{};
     if (config["monitor"]) {
@@ -371,7 +371,7 @@ namespace lsy_ros_data_utils::rosbag {
     };
 
     while (!br->stop.load() && rclcpp::ok()) {
-      RCLCPP_INFO(get_logger(), "Writer thread writting for bag '%s'", br->spec.name.c_str());
+      //RCLCPP_INFO(get_logger(), "Writer thread writting for bag '%s'", br->spec.name.c_str());
       next_wake += duration_cast<steady_clock::duration>(period);
 
       std::deque<std::shared_ptr<const BagItem> > batch; {
@@ -515,6 +515,8 @@ namespace lsy_ros_data_utils::rosbag {
   void BagRecorderComponent::monitor_timer_cb() {
     if (!monitor_cfg_.enabled) return;
 
+     // Clear terminal + move cursor to top-left
+    std::cout << "\033[2J\033[H" << std::flush;
     const int64_t now_ns = now_ns_steady();
 
     RCLCPP_INFO(get_logger(), "===== BagRecorder Monitor (EWMA tau=%.2fs) =====", monitor_cfg_.ewma_tau_sec);

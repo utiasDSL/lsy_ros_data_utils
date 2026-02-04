@@ -1,17 +1,17 @@
 ---
 monitor:
   enabled: true
-  print_hz: .5
+  print_hz: 1.0
   ewma_tau_sec: 2.0
   warn_grace_sec: 2.0
   use_ansi_color: true
 
 bags:
-  - name: "saberguide"
+  - name: "saberguide_indoor"
     bag_uri: "/home/user/00_bags"
     storage_id: "mcap"
-    write_frequency_hz: 10.0
-    max_queue_size: 20000
+    write_frequency_hz: 5.0
+    max_queue_size: 30000
     uri_with_datetime: true
     topics:
       - name: "/mavros/altitude"
@@ -58,7 +58,7 @@ bags:
           warn_below_hz: 10.
       - name: "/mavros/imu/temperature_imu"
         type: "sensor_msgs/msg/Temperature"
-        qos: "sensor"
+        qos: "default"
         mode: "generic"
         monitor:
           expected_hz: 10.0
@@ -252,63 +252,112 @@ bags:
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/depth/depth_registered"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/confidence/confidence_map"
-        type: "sensor_msgs/msg/Image"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/left/color/rect/image/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/left/color/rect/image"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
+      - name: "/zed_saberguide/zed_node/left/color/raw/image/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 13.0
+      - name: "/zed_saberguide/zed_node/left/color/raw/image"
+        type: "sensor_msgs/msg/Image"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 13.0
+      - name: "/zed_saberguide/zed_node/left/gray/rect/image/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 13.0
+      - name: "/zed_saberguide/zed_node/left/gray/rect/image/compressed"
+        type: "sensor_msgs/msg/CompressedImage"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 13.0
+      - name: "/zed_saberguide/zed_node/right/gray/rect/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 13.0
+      - name: "/zed_saberguide/zed_node/right/gray/rect/image/compressed"
+        type: "sensor_msgs/msg/CompressedImage"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/right/color/rect/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
+      - name: "/zed_saberguide/zed_node/right/color/raw/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/right/color/rect/image"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
+      - name: "/zed_saberguide/zed_node/right/color/raw/image"
+        type: "sensor_msgs/msg/Image"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/odom"
         type: "nav_msgs/msg/Odometry"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/pose"
         type: "geometry_msgs/msg/PoseStamped"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/temperature/imu"
         type: "sensor_msgs/msg/Temperature"
         qos: "sensor"
@@ -329,14 +378,14 @@ bags:
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/pose/status"
         type: "zed_msgs/msg/PosTrackStatus"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 10.0
+          warn_below_hz: 13.0
       - name: "/zed_saberguide/zed_node/left_cam_imu_transform"
         type: "geometry_msgs/msg/TransformStamped"
         qos: "sensor"
@@ -561,8 +610,8 @@ bags:
         qos: "default"
         mode: "typed"
         monitor:
-          expected_hz: 1.0
-          warn_below_hz: .5
+          expected_hz: 10.0
+          warn_below_hz: 9.0
       - name: "/septentrio/satellite_visibility"
         type: "septentrio_gnss_driver/msg/SatVisibility"
         qos: "default"
