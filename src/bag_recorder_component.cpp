@@ -1,7 +1,7 @@
 // Copyright (c) 2026  Learning Systems and Robotics Lab,
 // Technical University of Munich (TUM)
 //
-// Authors:  Haoming Zhang <haoming.zhang@tum>
+// Authors:  Haoming Zhang <haoming.zhang@tum.de>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,6 +71,16 @@ namespace lsy_ros_data_utils::rosbag {
     set_ts_impl(m, send_ns, recv_ns, 0);
   }
 
+  static bool should_warn(std::atomic<int64_t> &last_ns,
+                          int64_t now_ns,
+                          double period_sec) {
+    const int64_t period_ns = static_cast<int64_t>(period_sec * 1e9);
+    int64_t prev = last_ns.load(std::memory_order_relaxed);
+    if (now_ns - prev < period_ns) return false;
+    return last_ns.compare_exchange_strong(prev, now_ns, std::memory_order_relaxed);
+  }
+
+
   // ---------------- main ----------------
 
   BagRecorderComponent::BagRecorderComponent(const rclcpp::NodeOptions &node_options)
@@ -129,7 +139,7 @@ namespace lsy_ros_data_utils::rosbag {
       throw std::runtime_error("YAML must contain 'bags' as a sequence.");
     }
 
-   // std::cout << config << std::endl;
+    // std::cout << config << std::endl;
     // monitor (optional)
     monitor_cfg_ = MonitorCfg{};
     if (config["monitor"]) {
@@ -149,7 +159,20 @@ namespace lsy_ros_data_utils::rosbag {
       br->spec.bag_uri = require_string(bag, "bag_uri");
       br->spec.storage_id = bag["storage_id"] ? bag["storage_id"].as<std::string>() : std::string("mcap");
       br->spec.write_frequency_hz = bag["write_frequency_hz"] ? bag["write_frequency_hz"].as<double>() : 1.0;
+
       br->spec.max_queue_size = bag["max_queue_size"] ? bag["max_queue_size"].as<size_t>() : 20000;
+      br->spec.max_queue_bytes = bag["max_queue_bytes"]
+                                   ? bag["max_queue_bytes"].as<size_t>()
+                                   : (1024ull * 1024 * 1024); // 1 GiB default
+      br->spec.overflow_policy = bag["overflow_policy"]
+                                   ? bag["overflow_policy"].as<std::string>()
+                                   : std::string("drop_oldest");
+
+      br->spec.warn_on_overflow = bag["warn_on_overflow"] ? bag["warn_on_overflow"].as<bool>() : true;
+      br->spec.overflow_warn_period_sec =
+          bag["overflow_warn_period_sec"] ? bag["overflow_warn_period_sec"].as<double>() : 1.0;
+
+
       br->spec.uri_with_datetime = bag["uri_with_datetime"] ? bag["uri_with_datetime"].as<bool>() : true;
 
       if (!bag["topics"] || !bag["topics"].IsSequence()) {
@@ -264,6 +287,9 @@ namespace lsy_ros_data_utils::rosbag {
     }
 
     storage_options.storage_id = br.spec.storage_id;
+    storage_options.snapshot_mode = false;
+
+    storage_options.max_cache_size = 512ull * 1024 * 1024;
 
     rosbag2_cpp::ConverterOptions converter_options;
     converter_options.input_serialization_format = "cdr";
@@ -281,8 +307,13 @@ namespace lsy_ros_data_utils::rosbag {
     }
 
     RCLCPP_INFO(get_logger(),
-                "Opened bag '%s' uri='%s' storage_id='%s' topics=%zu",
-                br.spec.name.c_str(), br.spec.bag_uri.c_str(), br.spec.storage_id.c_str(), br.spec.topics.size());
+                "Opened bag '%s' uri='%s' storage_id='%s' topics=%zu max_queue_bytes=%zu overflow_policy=%s",
+                br.spec.name.c_str(),
+                storage_options.uri.c_str(),
+                br.spec.storage_id.c_str(),
+                br.spec.topics.size(),
+                br.spec.max_queue_bytes,
+                br.spec.overflow_policy.c_str());
   }
 
   // ---------------- type registry (typed, intra-process compatible) ----------------
@@ -320,80 +351,186 @@ namespace lsy_ros_data_utils::rosbag {
     out->buffer_length = n;
     return out;
   }
-  
+
+  std::shared_ptr<rcutils_uint8_array_t>
+  BagRecorderComponent::make_rcutils_uint8_array_copy(const rcl_serialized_message_t &rcl) {
+    auto deleter = [](rcutils_uint8_array_t *arr) {
+      if (!arr) return;
+      rcutils_uint8_array_fini(arr);
+      delete arr;
+    };
+
+    auto out = std::shared_ptr<rcutils_uint8_array_t>(new rcutils_uint8_array_t, deleter);
+    *out = rcutils_get_zero_initialized_uint8_array();
+
+    const size_t n = rcl.buffer_length;
+
+    const rcutils_allocator_t allocator = rcl_get_default_allocator();
+    if (RCUTILS_RET_OK != rcutils_uint8_array_init(out.get(), n, &allocator)) {
+      throw std::runtime_error("Failed rcutils_uint8_array_init");
+    }
+
+    std::memcpy(out->buffer, rcl.buffer, n);
+    out->buffer_length = n;
+    return out;
+  }
+
+
   void
   BagRecorderComponent::fanout_enqueue_item(const std::string &topic_name,
                                             std::shared_ptr<const BagItem> item) {
     const auto it = topic_to_bags_.find(topic_name);
-    if (it == topic_to_bags_.end()) {
-      return;
-    }
+    if (it == topic_to_bags_.end()) return;
 
     for (const size_t bi: it->second) {
-      auto &br = *bags_[bi]; {
-        std::lock_guard<std::mutex> lk(br.mtx);
-        if (br.msg_queue.size() >= br.spec.max_queue_size) {
-          br.msg_queue.pop_front();
+      auto &br = *bags_[bi];
+
+      std::unique_lock<std::mutex> lk(br.mtx);
+
+      auto drop_oldest_one = [&]() {
+        if (br.msg_queue.empty()) return;
+        const auto &old = br.msg_queue.front();
+        br.queued_bytes -= old->approx_bytes;
+        br.msg_queue.pop_front();
+
+        br.dropped_msgs.fetch_add(1, std::memory_order_relaxed);
+        br.dropped_bytes.fetch_add(old->approx_bytes, std::memory_order_relaxed);
+        br.overflow_events.fetch_add(1, std::memory_order_relaxed);
+      };
+
+      // ---------- BLOCK MODE ----------
+      if (br.spec.overflow_policy == "block") {
+        const bool would_block =
+            (br.msg_queue.size() >= br.spec.max_queue_size) ||
+            (br.queued_bytes + item->approx_bytes > br.spec.max_queue_bytes);
+
+        if (would_block && br.spec.warn_on_overflow) {
+          const int64_t now_ns = now_ns_steady();
+          if (should_warn(br.last_overflow_warn_ns, now_ns, br.spec.overflow_warn_period_sec)) {
+            RCLCPP_WARN(this->get_logger(),
+                        "[bag=%s] OVERFLOW(block): writer is behind; blocking producer. queued=%zu msgs (%zu bytes), incoming=%zu bytes, limits: max_queue_size=%zu max_queue_bytes=%zu",
+                        br.spec.name.c_str(),
+                        br.msg_queue.size(), br.queued_bytes, item->approx_bytes,
+                        br.spec.max_queue_size, br.spec.max_queue_bytes);
+          }
         }
-        br.msg_queue.push_back(std::move(item));
+
+        br.cv.wait(lk, [&]() {
+          if (br.stop.load()) return true;
+          const bool under_count = (br.msg_queue.size() < br.spec.max_queue_size);
+          const bool under_bytes = (br.queued_bytes + item->approx_bytes <= br.spec.max_queue_bytes);
+          return under_count && under_bytes;
+        });
+
+        if (br.stop.load()) return;
+
+        // enqueue
+        br.msg_queue.push_back(item);
+        br.queued_bytes += item->approx_bytes;
+
+        lk.unlock();
+        br.cv.notify_one();
+        continue;
       }
+
+      // ---------- DROP_OLDEST MODE (default) ----------
+      // enforce count cap
+      while (br.msg_queue.size() >= br.spec.max_queue_size && !br.msg_queue.empty()) {
+        drop_oldest_one();
+      }
+
+      // enforce byte cap
+      while (!br.msg_queue.empty() &&
+             (br.queued_bytes + item->approx_bytes > br.spec.max_queue_bytes)) {
+        drop_oldest_one();
+      }
+
+      // If a single message is larger than the entire cap, skip it (can't ever fit)
+      if (item->approx_bytes > br.spec.max_queue_bytes) {
+        if (br.spec.warn_on_overflow) {
+          const int64_t now_ns = now_ns_steady();
+          if (should_warn(br.last_overflow_warn_ns, now_ns, br.spec.overflow_warn_period_sec)) {
+            RCLCPP_WARN(this->get_logger(),
+                        "[bag=%s] OVERFLOW(drop_oldest): single message too large to fit cap; dropping incoming. incoming=%zu bytes cap=%zu bytes topic=%s",
+                        br.spec.name.c_str(),
+                        item->approx_bytes, br.spec.max_queue_bytes, topic_name.c_str());
+          }
+        }
+        continue;
+      }
+
+      // If still can't fit (should be rare), drop incoming
+      if (br.queued_bytes + item->approx_bytes > br.spec.max_queue_bytes) {
+        br.dropped_msgs.fetch_add(1, std::memory_order_relaxed);
+        br.dropped_bytes.fetch_add(item->approx_bytes, std::memory_order_relaxed);
+        br.overflow_events.fetch_add(1, std::memory_order_relaxed);
+      } else {
+        br.msg_queue.push_back(item);
+        br.queued_bytes += item->approx_bytes;
+      }
+
+      // Rate-limited aggregated warning (only if we actually dropped something recently)
+      if (br.spec.warn_on_overflow) {
+        const int64_t now_ns = now_ns_steady();
+        if (should_warn(br.last_overflow_warn_ns, now_ns, br.spec.overflow_warn_period_sec)) {
+          const auto dm = br.dropped_msgs.exchange(0, std::memory_order_relaxed);
+          const auto db = br.dropped_bytes.exchange(0, std::memory_order_relaxed);
+
+          if (dm > 0) {
+            RCLCPP_WARN(this->get_logger(),
+                        "[bag=%s] OVERFLOW(drop_oldest): dropped=%llu msgs (%llu bytes) | queued=%zu msgs (%zu bytes) | limits: max_queue_size=%zu max_queue_bytes=%zu",
+                        br.spec.name.c_str(),
+                        static_cast<unsigned long long>(dm),
+                        static_cast<unsigned long long>(db),
+                        br.msg_queue.size(), br.queued_bytes,
+                        br.spec.max_queue_size, br.spec.max_queue_bytes);
+          }
+        }
+      }
+
+      lk.unlock();
       br.cv.notify_one();
     }
   }
+
 
   // ---------------- writer thread ----------------
 
   void
   BagRecorderComponent::writer_loop(BagRuntime *br) const {
-    using namespace std::chrono;
-    const auto period = duration<double>(1.0 / br->spec.write_frequency_hz);
-    auto next_wake = steady_clock::now();
-
-    auto prepare_rosbag_serialized_msg = [this](
-      const std::shared_ptr<const BagItem> &item) -> std::shared_ptr<
-      rosbag2_storage::SerializedBagMessage> {
-      // for typed messages that have not been serialized due to the intra comm process, we call this function
-      // Serialize raw message (CDR)
-      const auto serialized = item->make_serialized();
-
-      // Copy into rcutils buffer expected by rosbag2
-      const auto payload = make_rcutils_uint8_array_copy(serialized);
-
-      // Construct bag message
-      auto bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
-      bag_msg->topic_name = item->topic_name;
-      bag_msg->serialized_data = payload;
-
-      // Cross-distro timestamp handling
-      set_bag_message_timestamps(*bag_msg, item->send_ns, item->recv_ns);
-
-      return bag_msg;
-    };
-
     while (!br->stop.load() && rclcpp::ok()) {
       //RCLCPP_INFO(get_logger(), "Writer thread writting for bag '%s'", br->spec.name.c_str());
-      next_wake += duration_cast<steady_clock::duration>(period);
-
       std::deque<std::shared_ptr<const BagItem> > batch; {
         std::unique_lock<std::mutex> lk(br->mtx);
-        br->cv.wait_until(lk, next_wake, [&]() { return br->stop.load() || !br->msg_queue.empty(); });
+        br->cv.wait(lk, [&]() { return br->stop.load() || !br->msg_queue.empty(); });
         if (br->stop.load()) break;
         batch.swap(br->msg_queue);
+        br->queued_bytes = 0;
       }
 
       for (const auto &item: batch) {
-        br->writer.write(prepare_rosbag_serialized_msg(item));
+        auto bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
+        bag_msg->topic_name = item->topic_name;
+        bag_msg->serialized_data = item->payload;
+        set_bag_message_timestamps(*bag_msg, item->send_ns, item->recv_ns);
+        br->writer.write(bag_msg);
       }
-      std::this_thread::sleep_until(next_wake);
+      // If producers are blocked, wake them
+      br->cv.notify_all();
     }
 
     // drain on shutdown
     std::deque<std::shared_ptr<const BagItem> > batch_tail; {
       std::lock_guard<std::mutex> lk(br->mtx);
       batch_tail.swap(br->msg_queue);
+      br->queued_bytes = 0;
     }
     for (const auto &item: batch_tail) {
-      br->writer.write(prepare_rosbag_serialized_msg(item));
+      auto bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
+      bag_msg->topic_name = item->topic_name;
+      bag_msg->serialized_data = item->payload;
+      set_bag_message_timestamps(*bag_msg, item->send_ns, item->recv_ns);
+      br->writer.write(bag_msg);
     }
     RCLCPP_INFO(get_logger(), "Writer thread stopped for bag '%s'", br->spec.name.c_str());
   }
@@ -434,25 +571,15 @@ namespace lsy_ros_data_utils::rosbag {
           const int64_t recv_ns = this->now().nanoseconds();
           const int64_t send_ns = recv_ns; // can't extract header stamp without deserializing
 
+          const auto &rin = msg->get_rcl_serialized_message();
+          auto payload = BagRecorderComponent::make_rcutils_uint8_array_copy(rin);
+
           auto item = std::make_shared<BagItem>();
           item->topic_name = topic;
           item->send_ns = send_ns;
           item->recv_ns = recv_ns;
-
-          // Capture the serialized message and copy it into 'out' later.
-          item->make_serialized = [msg]() -> rclcpp::SerializedMessage {
-            // Copy construct a new SerializedMessage with the right size and memcpy the bytes
-            const auto &rin = msg->get_rcl_serialized_message();
-            const size_t n = rin.buffer_length;
-
-            rclcpp::SerializedMessage out(n);
-            auto &rout = out.get_rcl_serialized_message();
-            std::memcpy(rout.buffer, rin.buffer, n);
-            rout.buffer_length = n;
-
-            return out;
-          };
-
+          item->payload = std::move(payload);
+          item->approx_bytes = item->payload ? item->payload->buffer_length : 0;
           this->fanout_enqueue_item(topic, std::move(item));
         };
 
@@ -515,7 +642,7 @@ namespace lsy_ros_data_utils::rosbag {
   void BagRecorderComponent::monitor_timer_cb() {
     if (!monitor_cfg_.enabled) return;
 
-     // Clear terminal + move cursor to top-left
+    // Clear terminal + move cursor to top-left
     std::cout << "\033[2J\033[H" << std::flush;
     const int64_t now_ns = now_ns_steady();
 

@@ -11,8 +11,12 @@ bags:
     bag_uri: "/home/user/00_bags"
     storage_id: "mcap"
     write_frequency_hz: 10.0
-    max_queue_size: 20000
     uri_with_datetime: true
+    max_queue_bytes: 1073741824     # 1GiB MiB
+    max_queue_size: 2000          # secondary cap
+    overflow_policy: block  # or "block" drop_oldest
+    warn_on_overflow: true
+    overflow_warn_period_sec: 1.0
     topics:
       - name: "/mavros/altitude"
         type: "mavros_msgs/msg/Altitude"

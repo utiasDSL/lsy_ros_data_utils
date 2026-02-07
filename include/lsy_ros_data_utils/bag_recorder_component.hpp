@@ -1,7 +1,7 @@
 // Copyright (c) 2026  Learning Systems and Robotics Lab,
 // Technical University of Munich (TUM)
 //
-// Authors:  Haoming Zhang <haoming.zhang@tum>
+// Authors:  Haoming Zhang <haoming.zhang@tum.de>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -46,6 +47,7 @@
 #include <rclcpp_components/component_manager.hpp>
 #include <rosbag2_cpp/writer.hpp>
 #include <rosbag2_storage/serialized_bag_message.hpp>
+#include <rclcpp/serialization.hpp>
 #include <rosbag2_storage/topic_metadata.hpp>
 
 #include "utils.hpp"
@@ -67,9 +69,20 @@ namespace lsy_ros_data_utils::rosbag {
     bool uri_with_datetime{false};
     bool enable_message_monitoring{false};
     std::string storage_id{"mcap"};
+    // (legacy) kept for compatibility; writer loop is drain-driven now
     double write_frequency_hz{1};
-    size_t max_queue_size{20000};
+
+    // queue limits
+    size_t max_queue_size{20000}; // secondary cap by count
+    size_t max_queue_bytes{1024ull * 1024 * 1024}; // 1 GiB per bag default
+
+    // overflow policy: "drop_oldest" (default) or "block"
+    std::string overflow_policy{"drop_oldest"};
     std::vector<TopicSpec> topics;
+
+    bool warn_on_overflow{true};
+    double overflow_warn_period_sec{1.0}; // rate-limit warnings
+
   };
 
   class BagRecorderComponent final : public rclcpp::Node {
@@ -91,7 +104,11 @@ namespace lsy_ros_data_utils::rosbag {
       int64_t send_ns{0}; // publish time (header stamp if available else recv)
       int64_t recv_ns{0}; // receipt time
       // produces serialized bytes when called by writer thread
-      std::function<rclcpp::SerializedMessage()> make_serialized;
+      //std::function<rclcpp::SerializedMessage()> make_serialized;
+
+      // serialized bytes ready to write
+      std::shared_ptr<rcutils_uint8_array_t> payload;
+      size_t approx_bytes{0};
     };
 
     struct MonitorCfg {
@@ -118,12 +135,20 @@ namespace lsy_ros_data_utils::rosbag {
     struct BagRuntime {
       BagSpec spec;
       rosbag2_cpp::Writer writer;
+
       std::mutex mtx;
       std::condition_variable cv;
 
       std::deque<std::shared_ptr<const BagItem> > msg_queue;
+      size_t queued_bytes{0};
+
       std::atomic<bool> stop{false};
       std::thread thread;
+
+      std::atomic<uint64_t> dropped_msgs{0};
+      std::atomic<uint64_t> dropped_bytes{0};
+      std::atomic<uint64_t> overflow_events{0};
+      std::atomic<int64_t> last_overflow_warn_ns{0}; // steady clock ns
     };
 
     void open_bag_and_create_topics(BagRuntime &br) const;
@@ -133,6 +158,9 @@ namespace lsy_ros_data_utils::rosbag {
     // message handling
     static std::shared_ptr<rcutils_uint8_array_t> make_rcutils_uint8_array_copy(
       const rclcpp::SerializedMessage &serialized);
+
+    static std::shared_ptr<rcutils_uint8_array_t> make_rcutils_uint8_array_copy(
+      const rcl_serialized_message_t &rcl);
 
     void set_bag_message_timestamps(
       rosbag2_storage::SerializedBagMessage &m,
@@ -150,7 +178,6 @@ namespace lsy_ros_data_utils::rosbag {
 
     // topic statics
     void on_rx(const std::string &topic, int64_t recv_ns_steady);
-
     void monitor_timer_cb();
 
   private: // variables
@@ -168,6 +195,7 @@ namespace lsy_ros_data_utils::rosbag {
     using SubFactory = std::function<rclcpp::SubscriptionBase::SharedPtr(
       const std::string &topic_name,
       const rclcpp::QoS &qos)>;
+
     std::unordered_map<std::string, SubFactory> type_registry_;
 
     // Keep subscriptions alive
@@ -199,19 +227,19 @@ namespace lsy_ros_data_utils::rosbag {
             const int64_t send_ns = get_message_timestamp_ns(*msg, recv_ns);
 
             // erase type without copying payload
-            auto msg_keepalive = std::static_pointer_cast<const void>(msg);
+            rclcpp::Serialization<MsgT> ser;
+            rclcpp::SerializedMessage serialized_msg;
+            ser.serialize_message(msg.get(), &serialized_msg);
+
+            auto payload = BagRecorderComponent::make_rcutils_uint8_array_copy(serialized_msg);
+
 
             auto bag_item = std::make_shared<BagItem>();
             bag_item->topic_name = topic_name;
             bag_item->send_ns = send_ns;
             bag_item->recv_ns = recv_ns;
-            bag_item->make_serialized = [msg_keepalive]() {
-              const auto *typed = static_cast<const MsgT *>(msg_keepalive.get());
-              rclcpp::Serialization<MsgT> ser;
-              rclcpp::SerializedMessage serialized_msg;
-              ser.serialize_message(typed, &serialized_msg);
-              return serialized_msg;
-            };
+            bag_item->payload = std::move(payload);
+            bag_item->approx_bytes = bag_item->payload ? bag_item->payload->buffer_length : 0;
 
             // enqueue raw message pointer + serializer; writer thread will serialize
             this->fanout_enqueue_item(topic_name, std::move(bag_item));
