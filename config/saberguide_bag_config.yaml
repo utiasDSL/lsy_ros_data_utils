@@ -17,6 +17,10 @@ bags:
     overflow_policy: block  # or "block" drop_oldest
     warn_on_overflow: true
     overflow_warn_period_sec: 1.0
+    compress_image: false
+    jpeg_quality: 95
+    png_level: 3
+    compression_type: "png"
     topics:
       - name: "/mavros/altitude"
         type: "mavros_msgs/msg/Altitude"

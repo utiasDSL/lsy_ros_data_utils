@@ -17,7 +17,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(rosbag2_cpp REQUIRED)
 find_package(rosbag2_storage REQUIRED)
 find_package(yaml-cpp REQUIRED)
-
+find_package(OpenCV REQUIRED)
 # general ros messages
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -68,9 +68,11 @@ set(AMENT_DEPENDENCIES_GENERAL
 add_library(bag_recorder_component SHARED
         src/bag_recorder_component.cpp
         src/bag_recorder_type_registration.cpp
+        include/lsy_ros_data_utils/msg_converter.hpp
 )
 target_link_libraries(bag_recorder_component
         yaml-cpp
+        ${OpenCV_LIBS}
 )
 target_include_directories(bag_recorder_component PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include

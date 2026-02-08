@@ -41,6 +41,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <type_traits>
 
 // ros utils
 #include <rclcpp/rclcpp.hpp>
@@ -50,7 +51,14 @@
 #include <rclcpp/serialization.hpp>
 #include <rosbag2_storage/topic_metadata.hpp>
 
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/compressed_image.hpp>
+
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+
 #include "utils.hpp"
+#include "msg_converter.hpp"
 
 namespace lsy_ros_data_utils::rosbag {
   struct TopicSpec {
@@ -181,6 +189,11 @@ namespace lsy_ros_data_utils::rosbag {
     void monitor_timer_cb();
 
   private: // variables
+    // general parameters
+    bool compress_images_{false};
+    int jpeg_quality_{95};
+    int png_level_{3};
+    std::string compression_type_{"png"};
     // loaded bags
     std::vector<std::unique_ptr<BagRuntime> > bags_;
 
@@ -213,12 +226,17 @@ namespace lsy_ros_data_utils::rosbag {
   void BagRecorderComponent::register_type(const std::string &type_name) {
     // Store a factory that will create a typed subscription for MsgT.
     // This keeps intra-process compatibility because it is a typed rclcpp subscription.
+    auto compress_images = false;
+    if (type_name == "sensor_msgs/msg/Image" && compress_images_) {
+      compress_images = true;
+    }
+
     type_registry_[type_name] =
-        [this](const std::string &topic_name, const rclcpp::QoS &qos) -> rclcpp::SubscriptionBase::SharedPtr {
+        [this, compress_images](const std::string &topic_name, const rclcpp::QoS &qos) -> rclcpp::SubscriptionBase::SharedPtr {
           // serializer for MsgT (type-erased via void*)
 
           // callback receives a shared_ptr to the in-memory message (intra-process friendly)
-          auto cb = [this, topic_name](typename MsgT::ConstSharedPtr msg) {
+          auto cb = [this, topic_name, compress_images](typename MsgT::ConstSharedPtr msg) {
             // monitoring: steady clock, lock-free
             const int64_t recv_ns_steady = now_ns_steady();
             this->on_rx(topic_name, recv_ns_steady);
@@ -226,16 +244,25 @@ namespace lsy_ros_data_utils::rosbag {
             const int64_t recv_ns = this->now().nanoseconds();
             const int64_t send_ns = get_message_timestamp_ns(*msg, recv_ns);
 
+            std::string topic_name_bag = topic_name;
+
             // erase type without copying payload
-            rclcpp::Serialization<MsgT> ser;
             rclcpp::SerializedMessage serialized_msg;
-            ser.serialize_message(msg.get(), &serialized_msg);
 
+            if constexpr (std::is_same_v<MsgT, sensor_msgs::msg::Image>) {
+              if (compress_images) {
+                topic_name_bag += "/compressed";
+                const rclcpp::Serialization<sensor_msgs::msg::CompressedImage> ser;
+                const auto compressed_img = toCompressed(msg, compression_type_, jpeg_quality_, png_level_);
+                ser.serialize_message(&compressed_img, &serialized_msg);
+              }
+            } else {
+              rclcpp::Serialization<MsgT> ser;
+              ser.serialize_message(msg.get(), &serialized_msg);
+            }
             auto payload = BagRecorderComponent::make_rcutils_uint8_array_copy(serialized_msg);
-
-
             auto bag_item = std::make_shared<BagItem>();
-            bag_item->topic_name = topic_name;
+            bag_item->topic_name = topic_name_bag;
             bag_item->send_ns = send_ns;
             bag_item->recv_ns = recv_ns;
             bag_item->payload = std::move(payload);

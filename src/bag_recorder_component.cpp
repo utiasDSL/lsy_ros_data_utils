@@ -175,6 +175,12 @@ namespace lsy_ros_data_utils::rosbag {
 
       br->spec.uri_with_datetime = bag["uri_with_datetime"] ? bag["uri_with_datetime"].as<bool>() : true;
 
+      compress_images_ = bag["compress_image"] ? bag["compress_image"].as<bool>() : false;
+
+      jpeg_quality_ = bag["jpeg_quality"] ? bag["jpeg_quality"].as<int>() : 95;
+      png_level_ = bag["png_level"] ? bag["png_level"].as<int>() : 3;
+      compression_type_ = bag["compression_type"] ? bag["compression_type"].as<std::string>() : std::string("png");
+
       if (!bag["topics"] || !bag["topics"].IsSequence()) {
         throw std::runtime_error("Each bag must contain 'topics' as a sequence.");
       }
@@ -183,6 +189,10 @@ namespace lsy_ros_data_utils::rosbag {
         TopicSpec ts;
         ts.name = require_string(t, "name");
         ts.type = require_string(t, "type");
+        if (ts.type == "sensor_msgs/msg/Image" && compress_images_) {
+          // override the message type if we want to compresse the images
+          ts.type = "sensor_msgs/msg/CompressedImage";
+        }
         ts.qos = t["qos"] ? t["qos"].as<std::string>() : std::string("default");
         ts.mode = t["mode"] ? t["mode"].as<std::string>() : std::string("auto");
         if (t["monitor"]) {
