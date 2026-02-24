@@ -40,6 +40,7 @@ foreach (msg_pkg IN ITEMS
         "mavros_msgs"
         "zed_msgs"
         "gps_msgs"
+        "rslidar_msg"
 )
     find_package(${msg_pkg} QUIET)
     if (${msg_pkg}_FOUND)

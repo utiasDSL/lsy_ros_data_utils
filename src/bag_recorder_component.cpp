@@ -651,6 +651,7 @@ namespace lsy_ros_data_utils::rosbag {
 
   void BagRecorderComponent::monitor_timer_cb() {
     if (!monitor_cfg_.enabled) return;
+    static bool first_run = true;
 
     // Clear terminal + move cursor to top-left
     std::cout << "\033[2J\033[H" << std::flush;
@@ -660,9 +661,28 @@ namespace lsy_ros_data_utils::rosbag {
     RCLCPP_INFO(get_logger(), "%-40s  %8s  %8s  %8s  %s",
                 "topic", "ewmaHz", "warn<", "count", "rate");
 
-    for (auto &kv: topic_stats_) {
+    static std::vector<std::pair<std::string, TopicStats*>> topic_stats_container;
+
+    if (first_run)
+    {
+      topic_stats_container.reserve(topic_stats_.size());
+
+      for (auto &kv : topic_stats_) {
+          topic_stats_container.emplace_back(kv.first, &kv.second);
+      }
+
+      // Sort by topic name
+      std::sort(topic_stats_container.begin(), topic_stats_container.end(),
+                [](const auto &a, const auto &b) {
+                    return a.first < b.first;
+                });
+      first_run = false;
+    }
+
+    
+    for (auto &kv: topic_stats_container) {
       const std::string &topic = kv.first;
-      TopicStats &st = kv.second;
+      TopicStats &st = *kv.second;
       if (!st.enabled) continue;
 
       const double ewma = st.ewma_hz.load(std::memory_order_relaxed);

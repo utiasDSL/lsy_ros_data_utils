@@ -256,6 +256,10 @@ namespace lsy_ros_data_utils::rosbag {
                 const auto compressed_img = toCompressed(msg, compression_type_, jpeg_quality_, png_level_);
                 ser.serialize_message(&compressed_img, &serialized_msg);
               }
+              else { // dirty fix
+                rclcpp::Serialization<MsgT> ser;
+                ser.serialize_message(msg.get(), &serialized_msg);
+              }
             } else {
               rclcpp::Serialization<MsgT> ser;
               ser.serialize_message(msg.get(), &serialized_msg);

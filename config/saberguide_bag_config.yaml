@@ -10,7 +10,7 @@ bags:
   - name: "saberguide"
     bag_uri: "/home/user/00_bags"
     storage_id: "mcap"
-    write_frequency_hz: 10.0
+    write_frequency_hz: 50.0
     uri_with_datetime: true
     max_queue_bytes: 1073741824     # 1GiB MiB
     max_queue_size: 2000          # secondary cap
@@ -129,11 +129,13 @@ bags:
           warn_below_hz: 100.
       - name: "/mavros/imu/temperature_imu"
         type: "sensor_msgs/msg/Temperature"
-        qos: "sensor"
+        qos: "default"
         mode: "generic"
         monitor:
           expected_hz: 10.0
           warn_below_hz: 8.
+
+      # realsense
       - name: "/rs456/camera/color/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
@@ -197,168 +199,120 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
-   #   - name: "/rs456/camera/aligned_depth_to_color/camera_info"
-   #     type: "sensor_msgs/msg/CameraInfo"
-    #    qos: "sensor"
-    #    mode: "typed"
-    #    monitor:
-    #      expected_hz: 15.0
-    #      warn_below_hz: 12.0
-    #  - name: "/rs456/camera/aligned_depth_to_color/image_rect_raw"
-    #    type: "sensor_msgs/msg/Image"
-    #    qos: "sensor"
-    #    mode: "typed"
-    #    monitor:
-     #     expected_hz: 15.0
-    #      warn_below_hz: 12.0
-     # - name: "/rs456/camera/aligned_depth_to_infra1/camera_info"
-     #   type: "sensor_msgs/msg/CameraInfo"
-     #   qos: "sensor"
-     #   mode: "typed"
-     #   monitor:
-     #     expected_hz: 15.0
-     #     warn_below_hz: 12.0
-      #- name: "/rs456/camera/aligned_depth_to_infra1/image_rect_raw"
-     #   type: "sensor_msgs/msg/Image"
-     #   qos: "sensor"
-     #   mode: "typed"
-     #   monitor:
-     #     expected_hz: 15.0
-     #     warn_below_hz: 12.0
-      #- name: "/rs456/camera/aligned_depth_to_infra2/camera_info"
-      #  type: "sensor_msgs/msg/CameraInfo"
-      #  qos: "sensor"
-      #  mode: "typed"
-      #  monitor:
-      #    expected_hz: 15.0
-      #    warn_below_hz: 12.0
-    #  - name: "/rs456/camera/aligned_depth_to_infra2/image_rect_raw"
-     #   type: "sensor_msgs/msg/Image"
-     #   qos: "sensor"
-     #   mode: "typed"
-     #   monitor:
-     #     expected_hz: 15.0
-      #    warn_below_hz: 12.0
 
-      - name: "/zed_saberguide/zed_node/imu/data"
+      # zed
+      - name: "/zed/zed_node/imu/data"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
         mode: "typed"
         monitor:
-          expected_hz: 200.0
-          warn_below_hz: 180.0
-      - name: "/zed_saberguide/zed_node/imu/data_raw"
+          expected_hz: 100.0
+          warn_below_hz: 80.0
+      - name: "/zed/zed_node/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
         mode: "typed"
         monitor:
-          expected_hz: 200.0
-          warn_below_hz: 180.0
-      - name: "/zed_saberguide/zed_node/depth/camera_info"
+          expected_hz: 100.0
+          warn_below_hz: 80.0
+      - name: "/zed/zed_node/depth/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/depth/depth_registered"
+      - name: "/zed/zed_node/depth/depth_registered"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/confidence/confidence_map"
+      - name: "/zed/zed_node/confidence/confidence_map"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/left/color/rect/image/camera_info"
+      - name: "/zed/zed_node/left/color/rect/image/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/left/color/rect/image"
+      - name: "/zed/zed_node/left/color/rect/image"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/right/color/rect/camera_info"
+      - name: "/zed/zed_node/right/color/rect/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/right/color/rect/image"
+      - name: "/zed/zed_node/right/color/rect/image"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/odom"
+      - name: "/zed/zed_node/odom"
         type: "nav_msgs/msg/Odometry"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/pose"
+      - name: "/zed/zed_node/pose"
         type: "geometry_msgs/msg/PoseStamped"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/temperature/imu"
+      - name: "/zed/zed_node/temperature/imu"
         type: "sensor_msgs/msg/Temperature"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
-      - name: "/zed_saberguide/zed_node/status/heartbeat"
+      - name: "/zed/zed_node/status/heartbeat"
         type: "zed_msgs/msg/Heartbeat"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 1.0
           warn_below_hz: 0.5
-      - name: "/zed_saberguide/zed_node/status/health"
+      - name: "/zed/zed_node/status/health"
         type: "zed_msgs/msg/HealthStatusStamped"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/pose/status"
+      - name: "/zed/zed_node/pose/status"
         type: "zed_msgs/msg/PosTrackStatus"
         qos: "sensor"
         mode: "typed"
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed_saberguide/zed_node/left_cam_imu_transform"
+      - name: "/zed/zed_node/left_cam_imu_transform"
         type: "geometry_msgs/msg/TransformStamped"
         qos: "sensor"
         mode: "typed"
         monitor:
-          expected_hz: 200.0
-          warn_below_hz: 150.0
-
-      # /rs456/camera/extrinsics/depth_to_accel
-      #/rs456/camera/extrinsics/depth_to_color
-      #/rs456/camera/extrinsics/depth_to_depth
-      #/rs456/camera/extrinsics/depth_to_gyro
-      #/rs456/camera/extrinsics/depth_to_infra1
-      #/rs456/camera/extrinsics/depth_to_infra2
+          expected_hz: 100.0
+          warn_below_hz: 80.0
       - name: "/livox/lidar"
         type: "livox_ros_driver2/msg/CustomMsg"
         qos: "default"
@@ -377,6 +331,29 @@ bags:
         type: "sensor_msgs/msg/Imu"
         qos: "default"
         mode: "typed"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+
+      # rslidar
+      - name: "/rslidar/packets"
+        type: "livox_ros_driver2/msg/CustomMsg"
+        qos: "default"
+        mode: "generic"
+        monitor:
+          expected_hz: 10.0
+          warn_below_hz: 9.0
+      - name: "/rslidar/points"
+        type: "sensor_msgs/msg/PointCloud2"
+        qos: "default"
+        mode: "generic"
+        monitor:
+          expected_hz: 10.0
+          warn_below_hz: 9.0
+      - name: "/rslidar/imu_data"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "generic"
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0

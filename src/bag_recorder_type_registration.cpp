@@ -136,6 +136,10 @@
 #include <gps_msgs/msg/gps_fix.hpp>
 #endif
 
+#ifdef HAVE_RSLIDAR_MSG
+#include <rslidar_msg/msg/rslidar_packet.hpp>
+#endif
+
 
 namespace lsy_ros_data_utils::rosbag {
   void
@@ -259,6 +263,10 @@ namespace lsy_ros_data_utils::rosbag {
     register_type<zed_msgs::msg::GnssFusionStatus>("zed_msgs/msg/GnssFusionStatus");
     register_type<zed_msgs::msg::PosTrackStatus>("zed_msgs/msg/PosTrackStatus");
     register_type<zed_msgs::msg::SvoStatus>("zed_msgs/msg/SvoStatus");
+#endif
+
+#ifdef HAVE_RSLIDAR_MSG
+    register_type<rslidar_msg::msg::RslidarPacket>("rslidar_msg/msg/RslidarPacket");
 #endif
 
 
