@@ -337,7 +337,7 @@ bags:
 
       # rslidar
       - name: "/rslidar/packets"
-        type: "livox_ros_driver2/msg/CustomMsg"
+        type: "rslidar_msg/msg/RslidarPacket"
         qos: "default"
         mode: "generic"
         monitor:
