@@ -189,10 +189,10 @@ namespace lsy_ros_data_utils::rosbag {
         TopicSpec ts;
         ts.name = require_string(t, "name");
         ts.type = require_string(t, "type");
-        if (ts.type == "sensor_msgs/msg/Image" && compress_images_) {
+        //if (ts.type == "sensor_msgs/msg/Image" && compress_images_) {
           // override the message type if we want to compresse the images
-          ts.type = "sensor_msgs/msg/CompressedImage";
-        }
+        //  ts.type = "sensor_msgs/msg/CompressedImage";
+        //}
         ts.qos = t["qos"] ? t["qos"].as<std::string>() : std::string("default");
         ts.mode = t["mode"] ? t["mode"].as<std::string>() : std::string("auto");
         if (t["monitor"]) {
@@ -299,7 +299,7 @@ namespace lsy_ros_data_utils::rosbag {
     storage_options.storage_id = br.spec.storage_id;
     storage_options.snapshot_mode = false;
 
-    storage_options.max_cache_size = 512ull * 1024 * 1024;
+    storage_options.max_cache_size = 4ull * 1024 * 1024 * 1024;
 
     rosbag2_cpp::ConverterOptions converter_options;
     converter_options.input_serialization_format = "cdr";
