@@ -31,6 +31,8 @@
 #include <chrono>
 #include <cstring>
 #include <stdexcept>
+#include <filesystem>
+#include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <ctime>
@@ -86,12 +88,12 @@ namespace lsy_ros_data_utils::rosbag {
   BagRecorderComponent::BagRecorderComponent(const rclcpp::NodeOptions &node_options)
     : rclcpp::Node("bag_recorder_component", ensureIntraProcesComm(node_options)) {
     this->declare_parameter<std::string>("config_file", "");
-    const auto cfg = this->get_parameter("config_file").as_string();
-    if (cfg.empty()) {
+    cfg_file_ = this->get_parameter("config_file").as_string();
+    if (cfg_file_.empty()) {
       throw std::runtime_error("Parameter 'config_file' is required.");
     }
     this->init_type_registry();
-    this->load_config(cfg);
+    this->load_config(cfg_file_);
 
     // open bags + create topics
     for (auto &br: bags_) {
@@ -189,10 +191,6 @@ namespace lsy_ros_data_utils::rosbag {
         TopicSpec ts;
         ts.name = require_string(t, "name");
         ts.type = require_string(t, "type");
-        //if (ts.type == "sensor_msgs/msg/Image" && compress_images_) {
-          // override the message type if we want to compresse the images
-        //  ts.type = "sensor_msgs/msg/CompressedImage";
-        //}
         ts.qos = t["qos"] ? t["qos"].as<std::string>() : std::string("default");
         ts.mode = t["mode"] ? t["mode"].as<std::string>() : std::string("auto");
         if (t["monitor"]) {
@@ -306,12 +304,21 @@ namespace lsy_ros_data_utils::rosbag {
     converter_options.output_serialization_format = "cdr";
 
     br.writer.open(storage_options, converter_options);
-
+    std::filesystem::path src_path(cfg_file_);
+    std::filesystem::path dst_path(storage_options.uri);
+    std::filesystem::copy_file(src_path, dst_path, std::filesystem::copy_options::overwrite_existing);
+    
     // crate only this bag's topics
     for (const auto &ts: br.spec.topics) {
       rosbag2_storage::TopicMetadata md;
       md.name = ts.name;
-      md.type = ts.type;
+      if (ts.type == "sensor_msgs/msg/Image" && compress_images_) {
+      // override the message type if we want to compresse the images
+        md.type = "sensor_msgs/msg/CompressedImage";
+      }
+      else {
+        md.type = ts.type;
+      }
       md.serialization_format = "cdr";
       br.writer.create_topic(md);
     }
