@@ -37,6 +37,7 @@
 #include <sensor_msgs/msg/temperature.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <sensor_msgs/msg/time_reference.hpp>
+#include <sensor_msgs/msg/fluid_pressure.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
@@ -162,6 +163,7 @@ namespace lsy_ros_data_utils::rosbag {
     register_type<sensor_msgs::msg::Temperature>("sensor_msgs/msg/Temperature");
     register_type<sensor_msgs::msg::TimeReference>("sensor_msgs/msg/TimeReference");
     register_type<sensor_msgs::msg::NavSatFix>("sensor_msgs/msg/NavSatFix");
+    register_type<sensor_msgs::msg::FluidPressure>("sensor_msgs/msg/FluidPressure");
 
     register_type<geometry_msgs::msg::PoseStamped>("geometry_msgs/msg/PoseStamped");
     register_type<geometry_msgs::msg::PoseWithCovarianceStamped>("geometry_msgs/msg/PoseWithCovarianceStamped");

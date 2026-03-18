@@ -1,0 +1,168 @@
+---
+monitor:
+  enabled: true
+  print_hz: .5
+  ewma_tau_sec: 2.0
+  warn_grace_sec: 2.0
+  use_ansi_color: true
+
+bags:
+  - name: "saberguide_imus"
+    bag_uri: "/home/user/00_bags"
+    storage_id: "mcap"
+    write_frequency_hz: 10.0
+    uri_with_datetime: true
+    max_queue_bytes: 1073741824     # 1GiB MiB
+    max_queue_size: 2000          # secondary cap
+    overflow_policy: block  # or "block" drop_oldest
+    warn_on_overflow: true
+    overflow_warn_period_sec: 1.0
+    compress_image: false
+    jpeg_quality: 95
+    png_level: 3
+    compression_type: "png"
+    topics:
+      - name: "/mavros/imu/data_raw"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 50.0
+          warn_below_hz: 30.
+      - name: "/mavros/imu/data"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 1.0
+          warn_below_hz: .5
+      - name: "/mavros/imu/mag"
+        type: "sensor_msgs/msg/MagneticField"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.
+      - name: "/mavros/imu/temperature_imu"
+        type: "sensor_msgs/msg/Temperature"
+        qos: "default"
+        mode: "generic"
+        monitor:
+          expected_hz: 10.0
+          warn_below_hz: 8.
+
+      # realsense
+      - name: "/rs456/camera/imu"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+
+      # zed
+      - name: "/zed/zed_node/imu/data"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 100.0
+          warn_below_hz: 80.0
+      - name: "/zed/zed_node/imu/data_raw"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 100.0
+          warn_below_hz: 80.0
+      - name: "/zed/zed_node/temperature/imu"
+        type: "sensor_msgs/msg/Temperature"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 1.0
+          warn_below_hz: .5
+      - name: "/zed/zed_node/status/heartbeat"
+        type: "zed_msgs/msg/Heartbeat"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 1.0
+          warn_below_hz: 0.5
+      - name: "/zed/zed_node/status/health"
+        type: "zed_msgs/msg/HealthStatusStamped"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+      - name: "/zed/zed_node/left_cam_imu_transform"
+        type: "geometry_msgs/msg/TransformStamped"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 100.0
+          warn_below_hz: 80.0
+      - name: "/livox/imu"
+        type: "sensor_msgs/msg/Imu"
+        qos: "default"
+        mode: "typed"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+
+      # rslidar
+      #- name: "/rslidar/packets"
+      #  type: "rslidar_msg/msg/RslidarPacket"
+      #  qos: "default"
+      #  mode: "generic"
+      #  monitor:
+      #    expected_hz: 10.0
+     #     warn_below_hz: 9.0
+      - name: "/rslidar/imu_data"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+
+        ## septentrio
+      
+      - name: "/microstrain/imu/data"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+
+      - name: "/microstrain/imu/data_raw"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+      - name: "/microstrain/imu/mag"
+        type: "sensor_msgs/msg/MagneticField"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+      - name: "/microstrain/imu/pressure"
+        type: "sensor_msgs/msg/FluidPressure"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+
+
+
+
+
+
+
+
