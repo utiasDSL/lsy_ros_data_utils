@@ -190,6 +190,7 @@ namespace lsy_ros_data_utils::rosbag {
 
   private: // variables
     // general parameters
+    std::string cfg_file_;
     bool compress_images_{false};
     int jpeg_quality_{95};
     int png_level_{3};
