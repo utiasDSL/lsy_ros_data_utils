@@ -45,7 +45,7 @@ bags:
           warn_below_hz: 10.
       - name: "/mavros/imu/temperature_imu"
         type: "sensor_msgs/msg/Temperature"
-        qos: "default"
+        qos: "sensor"
         mode: "generic"
         monitor:
           expected_hz: 10.0
