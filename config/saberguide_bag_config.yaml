@@ -13,7 +13,7 @@ bags:
     write_frequency_hz: 10.0
     uri_with_datetime: true
     max_queue_bytes: 1073741824     # 1GiB MiB
-    max_queue_size: 2000          # secondary cap
+    max_queue_size: 5000          # secondary cap
     overflow_policy: block  # or "block" drop_oldest
     warn_on_overflow: true
     overflow_warn_period_sec: 1.0
@@ -64,13 +64,6 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.
-      - name: "/mavros/imu/temperature_imu"
-        type: "sensor_msgs/msg/Temperature"
-        qos: "sensor"
-        mode: "generic"
-        monitor:
-          expected_hz: 10.0
-          warn_below_hz: 8.
       - name: "/mavros/local_position/odom"
         type: "nav_msgs/msg/Odometry"
         qos: "sensor"
@@ -85,13 +78,13 @@ bags:
         monitor:
           expected_hz: 30.0
           warn_below_hz: 15.
-      - name: "/mavros/local_position/velocity_body"
-        type: "geometry_msgs/msg/TwistStamped"
-        qos: "sensor"
-        mode: "generic"
-        monitor:
-          expected_hz: 30.0
-          warn_below_hz: 15.
+      #- name: "/mavros/local_position/velocity_body"
+      #  type: "geometry_msgs/msg/TwistStamped"
+      #  qos: "sensor"
+      #  mode: "generic"
+     #   monitor:
+     #     expected_hz: 30.0
+     #     warn_below_hz: 15.
       - name: "/mavros/local_position/velocity_local"
         type: "geometry_msgs/msg/TwistStamped"
         qos: "sensor"
@@ -127,13 +120,6 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 100.
-      - name: "/mavros/imu/temperature_imu"
-        type: "sensor_msgs/msg/Temperature"
-        qos: "default"
-        mode: "generic"
-        monitor:
-          expected_hz: 10.0
-          warn_below_hz: 8.
 
       # realsense
       - name: "/rs456/camera/color/camera_info"
@@ -229,13 +215,13 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
-      - name: "/zed/zed_node/confidence/confidence_map"
-        type: "sensor_msgs/msg/Image"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 10.0
+      #- name: "/zed/zed_node/confidence/confidence_map"
+      #  type: "sensor_msgs/msg/Image"
+      #  qos: "sensor"
+      #  mode: "typed"
+      #  monitor:
+     #     expected_hz: 15.0
+     #     warn_below_hz: 10.0
       - name: "/zed/zed_node/left/color/rect/image/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
