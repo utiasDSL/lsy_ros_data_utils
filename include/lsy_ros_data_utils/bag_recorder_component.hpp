@@ -66,31 +66,36 @@ namespace lsy_ros_data_utils::rosbag {
     std::string type;
     std::string qos; // "sensor_data" or "default"
     std::string mode; // "auto" or "typed" for intra communication process or "generic" with serialization
+    rclcpp::CallbackGroup::SharedPtr cb_group;
     bool monitor_enabled{false};
     double expected_hz{0.0};
     double warn_below_hz{0.0};
   };
 
   struct BagSpec {
+    enum class OverflowPolicy {
+      DROP_OLDEST,
+      BLOCK
+    };
+
     std::string name;
     std::string bag_uri;
     bool uri_with_datetime{false};
     bool enable_message_monitoring{false};
     std::string storage_id{"mcap"};
-    // (legacy) kept for compatibility; writer loop is drain-driven now
-    double write_frequency_hz{1};
+    std::string storage_config_uri{""}; // <--- Add this field
 
     // queue limits
     size_t max_queue_size{20000}; // secondary cap by count
     size_t max_queue_bytes{1024ull * 1024 * 1024}; // 1 GiB per bag default
+    size_t bag_cache_size{2ull * 1024 * 1024 * 1024}; // 2 GiB per bag default
 
     // overflow policy: "drop_oldest" (default) or "block"
-    std::string overflow_policy{"drop_oldest"};
+    OverflowPolicy overflow_policy = OverflowPolicy::DROP_OLDEST;
     std::vector<TopicSpec> topics;
 
     bool warn_on_overflow{true};
     double overflow_warn_period_sec{1.0}; // rate-limit warnings
-
   };
 
   class BagRecorderComponent final : public rclcpp::Node {
@@ -106,18 +111,11 @@ namespace lsy_ros_data_utils::rosbag {
     // ---------- subscriptions ----------
     void create_subscriptions();
 
-    // -------- Bag item (unifies typed+generic) --------
-    struct BagItem {
-      std::string topic_name;
-      int64_t send_ns{0}; // publish time (header stamp if available else recv)
-      int64_t recv_ns{0}; // receipt time
-      // produces serialized bytes when called by writer thread
-      //std::function<rclcpp::SerializedMessage()> make_serialized;
-
-      // serialized bytes ready to write
-      std::shared_ptr<rcutils_uint8_array_t> payload;
-      size_t approx_bytes{0};
-    };
+    void build_and_enqueue_msg(
+      const std::string &topic_name,
+      int64_t send_ns,
+      int64_t recv_ns,
+      std::shared_ptr<rcutils_uint8_array_t> payload);
 
     struct MonitorCfg {
       bool enabled{false};
@@ -147,7 +145,8 @@ namespace lsy_ros_data_utils::rosbag {
       std::mutex mtx;
       std::condition_variable cv;
 
-      std::deque<std::shared_ptr<const BagItem> > msg_queue;
+      //std::deque<std::shared_ptr<const BagItem> > msg_queue;
+      std::deque<std::shared_ptr<rosbag2_storage::SerializedBagMessage> > msg_queue;
       size_t queued_bytes{0};
 
       std::atomic<bool> stop{false};
@@ -180,12 +179,11 @@ namespace lsy_ros_data_utils::rosbag {
     template<typename MsgT>
     void register_type(const std::string &type_name); // implemented below (header)
 
-    void fanout_enqueue_item(
-      const std::string &topic_name,
-      std::shared_ptr<const BagItem> item);
+    void fanout_enqueue_item(std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg);
 
     // topic statics
     void on_rx(const std::string &topic, int64_t recv_ns_steady);
+
     void monitor_timer_cb();
 
   private: // variables
@@ -204,6 +202,10 @@ namespace lsy_ros_data_utils::rosbag {
     std::unordered_map<std::string, std::string> topic_to_type_;
     std::unordered_map<std::string, std::string> topic_to_qos_; // merged qos policy
     std::unordered_map<std::string, std::string> topic_to_mode_; // per unique topic
+    std::unordered_map<std::string, rclcpp::CallbackGroup::SharedPtr> topic_to_callback_groups_;
+
+    std::vector<rclcpp::CallbackGroup::SharedPtr> cb_groups_;
+    size_t next_cb_group_idx_{0};
 
     // registry: "sensor_msgs/msg/Image" -> factory that creates typed sub
     using SubFactory = std::function<rclcpp::SubscriptionBase::SharedPtr(
@@ -233,7 +235,8 @@ namespace lsy_ros_data_utils::rosbag {
     }
 
     type_registry_[type_name] =
-        [this, compress_images](const std::string &topic_name, const rclcpp::QoS &qos) -> rclcpp::SubscriptionBase::SharedPtr {
+        [this, compress_images](const std::string &topic_name,
+                                const rclcpp::QoS &qos) -> rclcpp::SubscriptionBase::SharedPtr {
           // serializer for MsgT (type-erased via void*)
 
           // callback receives a shared_ptr to the in-memory message (intra-process friendly)
@@ -256,8 +259,8 @@ namespace lsy_ros_data_utils::rosbag {
                 const rclcpp::Serialization<sensor_msgs::msg::CompressedImage> ser;
                 const auto compressed_img = toCompressed(msg, compression_type_, jpeg_quality_, png_level_);
                 ser.serialize_message(&compressed_img, &serialized_msg);
-              }
-              else { // dirty fix
+              } else {
+                // dirty fix
                 rclcpp::Serialization<MsgT> ser;
                 ser.serialize_message(msg.get(), &serialized_msg);
               }
@@ -265,19 +268,22 @@ namespace lsy_ros_data_utils::rosbag {
               rclcpp::Serialization<MsgT> ser;
               ser.serialize_message(msg.get(), &serialized_msg);
             }
-            auto payload = BagRecorderComponent::make_rcutils_uint8_array_copy(serialized_msg);
-            auto bag_item = std::make_shared<BagItem>();
-            bag_item->topic_name = topic_name_bag;
-            bag_item->send_ns = send_ns;
-            bag_item->recv_ns = recv_ns;
-            bag_item->payload = std::move(payload);
-            bag_item->approx_bytes = bag_item->payload ? bag_item->payload->buffer_length : 0;
+
+            auto payload = std::shared_ptr<rcutils_uint8_array_t>(
+              new rcutils_uint8_array_t(serialized_msg.release_rcl_serialized_message()),
+              [](rcutils_uint8_array_t *arr) {
+                if (arr) {
+                  rcutils_uint8_array_fini(arr);
+                  delete arr;
+                }
+              });
 
             // enqueue raw message pointer + serializer; writer thread will serialize
-            this->fanout_enqueue_item(topic_name, std::move(bag_item));
+            this->build_and_enqueue_msg(topic_name_bag, send_ns, recv_ns, std::move(payload));
           };
-
-          return this->create_subscription<MsgT>(topic_name, qos, std::move(cb));
+          auto subscription_options = rclcpp::SubscriptionOptions();
+          subscription_options.callback_group = topic_to_callback_groups_.at(topic_name);
+          return this->create_subscription<MsgT>(topic_name, qos, std::move(cb), subscription_options);
         };
   }
 }

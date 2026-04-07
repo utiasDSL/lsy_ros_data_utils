@@ -10,7 +10,6 @@ bags:
   - name: "main2"
     bag_uri: "/tmp/bag_test"
     storage_id: "mcap"
-    write_frequency_hz: 1.0
     max_queue_size: 30000
     uri_with_datetime: true
     topics:

@@ -58,7 +58,7 @@ def launch_setup(context, *args, **kwargs):
 
     container_name_val = container_name.perform(context)
     if container_name_val == '':
-        container_exec = 'component_container_isolated'
+        container_exec = 'component_container_mt'
         arguments_val = ['--use_multi_threaded_executor', '--ros-args', '--log-level', 'info']
         container = ComposableNodeContainer(
             name='bag_container',

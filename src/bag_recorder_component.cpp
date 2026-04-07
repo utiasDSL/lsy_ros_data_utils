@@ -45,6 +45,7 @@
 #include <rosbag2_cpp/converter_options.hpp>
 #include <rosbag2_storage/storage_options.hpp>
 #include <rosbag2_storage/serialized_bag_message.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 // Prefer new API (send_timestamp/recv_timestamp) if it exists
 template<typename M>
@@ -52,6 +53,7 @@ auto set_ts_impl(M &m, int64_t send_ns, int64_t recv_ns, int)
   -> decltype((m.send_timestamp = send_ns, m.recv_timestamp = recv_ns), void()) {
   m.send_timestamp = send_ns;
   m.recv_timestamp = recv_ns;
+  return;
 }
 
 // Fallback to old API (time_stamp) if it exists
@@ -59,6 +61,7 @@ template<typename M>
 auto set_ts_impl(M &m, int64_t send_ns, int64_t /*recv_ns*/, long)
   -> decltype((m.time_stamp = send_ns), void()) {
   m.time_stamp = send_ns;
+  return;
 }
 
 namespace lsy_ros_data_utils::rosbag {
@@ -141,6 +144,17 @@ namespace lsy_ros_data_utils::rosbag {
       throw std::runtime_error("YAML must contain 'bags' as a sequence.");
     }
 
+    // callback groups
+    if (config["num_callback_groups"]) {
+      const auto num_callback_groups = config["num_callback_groups"].as<size_t>();
+      for (size_t i = 0; i < num_callback_groups; ++i) {
+        cb_groups_.push_back(
+          this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive));
+      }
+    } else {
+      throw std::runtime_error("Parameter 'num_callback_groups' required!");
+    }
+
     // std::cout << config << std::endl;
     // monitor (optional)
     monitor_cfg_ = MonitorCfg{};
@@ -160,15 +174,19 @@ namespace lsy_ros_data_utils::rosbag {
       br->spec.name = require_string(bag, "name");
       br->spec.bag_uri = require_string(bag, "bag_uri");
       br->spec.storage_id = bag["storage_id"] ? bag["storage_id"].as<std::string>() : std::string("mcap");
-      br->spec.write_frequency_hz = bag["write_frequency_hz"] ? bag["write_frequency_hz"].as<double>() : 1.0;
 
       br->spec.max_queue_size = bag["max_queue_size"] ? bag["max_queue_size"].as<size_t>() : 20000;
       br->spec.max_queue_bytes = bag["max_queue_bytes"]
                                    ? bag["max_queue_bytes"].as<size_t>()
                                    : (1024ull * 1024 * 1024); // 1 GiB default
-      br->spec.overflow_policy = bag["overflow_policy"]
-                                   ? bag["overflow_policy"].as<std::string>()
-                                   : std::string("drop_oldest");
+
+      br->spec.bag_cache_size = bag["bag_cache_size"]
+                                  ? bag["bag_cache_size"].as<size_t>() * 1024 * 1024 * 1024
+                                  : (2048ull * 1024 * 1024); // 1 GiB default
+
+      br->spec.overflow_policy = bag["overflow_policy"] && bag["overflow_policy"].as<std::string>() == "block"
+                                   ? BagSpec::OverflowPolicy::BLOCK
+                                   : BagSpec::OverflowPolicy::DROP_OLDEST;
 
       br->spec.warn_on_overflow = bag["warn_on_overflow"] ? bag["warn_on_overflow"].as<bool>() : true;
       br->spec.overflow_warn_period_sec =
@@ -176,6 +194,9 @@ namespace lsy_ros_data_utils::rosbag {
 
 
       br->spec.uri_with_datetime = bag["uri_with_datetime"] ? bag["uri_with_datetime"].as<bool>() : true;
+
+      static const auto package_path = ament_index_cpp::get_package_share_directory("lsy_ros_data_utils") + "/config/";
+      br->spec.storage_config_uri = bag["storage_config_file"] ? package_path + bag["storage_config_file"].as<std::string>() : std::string("");
 
       compress_images_ = bag["compress_image"] ? bag["compress_image"].as<bool>() : false;
 
@@ -199,12 +220,14 @@ namespace lsy_ros_data_utils::rosbag {
           ts.expected_hz = mon["expected_hz"] ? mon["expected_hz"].as<double>() : 0.0;
           ts.warn_below_hz = mon["warn_below_hz"] ? mon["warn_below_hz"].as<double>() : 0.0;
         }
+        if (t["callback_group_id"] && t["callback_group_id"].as<size_t>() <= (cb_groups_.size() - 1)) {
+          ts.cb_group = cb_groups_[t["callback_group_id"].as<size_t>()];
+        } else {
+          throw std::runtime_error("Each topic should be assigned to a valid callback group id. Topic: " + ts.name);
+        }
         br->spec.topics.push_back(std::move(ts));
       }
 
-      if (br->spec.write_frequency_hz <= 0.0) {
-        throw std::runtime_error("write_frequency_hz must be > 0 for bag " + br->spec.name);
-      }
       bags_.push_back(std::move(br));
     }
 
@@ -262,6 +285,13 @@ namespace lsy_ros_data_utils::rosbag {
           mit->second = now;
         }
 
+        // callback groups merge
+        if (auto git = topic_to_callback_groups_.find(ts.name); git == topic_to_callback_groups_.end()) {
+          topic_to_callback_groups_[ts.name] = ts.cb_group;
+        } else if (git->second != ts.cb_group) {
+          RCLCPP_WARN(get_logger(), " Overriding the callback group for the topic %s", ts.name.c_str());
+        }
+
         // monitoring merge
         if (ts.monitor_enabled) {
           if (auto &st = topic_stats_[ts.name]; !st.enabled) {
@@ -296,27 +326,27 @@ namespace lsy_ros_data_utils::rosbag {
 
     storage_options.storage_id = br.spec.storage_id;
     storage_options.snapshot_mode = false;
-
-    storage_options.max_cache_size = 4ull * 1024 * 1024 * 1024;
+    storage_options.max_cache_size = br.spec.bag_cache_size;
 
     rosbag2_cpp::ConverterOptions converter_options;
     converter_options.input_serialization_format = "cdr";
     converter_options.output_serialization_format = "cdr";
 
+    // Apply the config URI if it was provided
+    if (!br.spec.storage_config_uri.empty()) {
+      storage_options.storage_config_uri = br.spec.storage_config_uri;
+    }
+
     br.writer.open(storage_options, converter_options);
-    std::filesystem::path src_path(cfg_file_);
-    std::filesystem::path dst_path(storage_options.uri);
-    std::filesystem::copy_file(src_path, dst_path, std::filesystem::copy_options::overwrite_existing);
-    
+
     // crate only this bag's topics
     for (const auto &ts: br.spec.topics) {
       rosbag2_storage::TopicMetadata md;
       md.name = ts.name;
       if (ts.type == "sensor_msgs/msg/Image" && compress_images_) {
-      // override the message type if we want to compresse the images
+        // override the message type if we want to compresse the images
         md.type = "sensor_msgs/msg/CompressedImage";
-      }
-      else {
+      } else {
         md.type = ts.type;
       }
       md.serialization_format = "cdr";
@@ -330,7 +360,7 @@ namespace lsy_ros_data_utils::rosbag {
                 br.spec.storage_id.c_str(),
                 br.spec.topics.size(),
                 br.spec.max_queue_bytes,
-                br.spec.overflow_policy.c_str());
+                br.spec.overflow_policy == BagSpec::OverflowPolicy::BLOCK ? "BLOCK" : "DROP_OLDEST");
   }
 
   // ---------------- type registry (typed, intra-process compatible) ----------------
@@ -342,7 +372,6 @@ namespace lsy_ros_data_utils::rosbag {
       ser.serialize_message(m, &out);
     };
   }
-
 
   std::shared_ptr<rcutils_uint8_array_t>
   BagRecorderComponent::make_rcutils_uint8_array_copy(const rclcpp::SerializedMessage &serialized) {
@@ -392,42 +421,44 @@ namespace lsy_ros_data_utils::rosbag {
     return out;
   }
 
+  void BagRecorderComponent::fanout_enqueue_item(std::shared_ptr<rosbag2_storage::SerializedBagMessage> msg) {
+    // Extract topic and calculate bytes directly from the serilaized payload
+    const std::string &topic_name = msg->topic_name;
+    const size_t msg_bytes = msg->serialized_data ? msg->serialized_data->buffer_length : 0;
 
-  void
-  BagRecorderComponent::fanout_enqueue_item(const std::string &topic_name,
-                                            std::shared_ptr<const BagItem> item) {
     const auto it = topic_to_bags_.find(topic_name);
     if (it == topic_to_bags_.end()) return;
 
     for (const size_t bi: it->second) {
       auto &br = *bags_[bi];
-
       std::unique_lock<std::mutex> lk(br.mtx);
 
+      // ---------- DROP_OLDEST MODE (default) ----------
       auto drop_oldest_one = [&]() {
         if (br.msg_queue.empty()) return;
+
         const auto &old = br.msg_queue.front();
-        br.queued_bytes -= old->approx_bytes;
+        const size_t old_bytes = old->serialized_data ? old->serialized_data->buffer_length : 0;
+
+        br.queued_bytes -= old_bytes;
         br.msg_queue.pop_front();
 
         br.dropped_msgs.fetch_add(1, std::memory_order_relaxed);
-        br.dropped_bytes.fetch_add(old->approx_bytes, std::memory_order_relaxed);
+        br.dropped_bytes.fetch_add(old_bytes, std::memory_order_relaxed);
         br.overflow_events.fetch_add(1, std::memory_order_relaxed);
       };
 
       // ---------- BLOCK MODE ----------
-      if (br.spec.overflow_policy == "block") {
-        const bool would_block =
-            (br.msg_queue.size() >= br.spec.max_queue_size) ||
-            (br.queued_bytes + item->approx_bytes > br.spec.max_queue_bytes);
-
+      if (br.spec.overflow_policy == BagSpec::OverflowPolicy::BLOCK) {
+        const bool would_block = (br.msg_queue.size() >= br.spec.max_queue_size) ||
+                                 (br.queued_bytes + msg_bytes > br.spec.max_queue_bytes);
         if (would_block && br.spec.warn_on_overflow) {
           const int64_t now_ns = now_ns_steady();
           if (should_warn(br.last_overflow_warn_ns, now_ns, br.spec.overflow_warn_period_sec)) {
             RCLCPP_WARN(this->get_logger(),
                         "[bag=%s] OVERFLOW(block): writer is behind; blocking producer. queued=%zu msgs (%zu bytes), incoming=%zu bytes, limits: max_queue_size=%zu max_queue_bytes=%zu",
                         br.spec.name.c_str(),
-                        br.msg_queue.size(), br.queued_bytes, item->approx_bytes,
+                        br.msg_queue.size(), br.queued_bytes, msg_bytes,
                         br.spec.max_queue_size, br.spec.max_queue_bytes);
           }
         }
@@ -435,15 +466,13 @@ namespace lsy_ros_data_utils::rosbag {
         br.cv.wait(lk, [&]() {
           if (br.stop.load()) return true;
           const bool under_count = (br.msg_queue.size() < br.spec.max_queue_size);
-          const bool under_bytes = (br.queued_bytes + item->approx_bytes <= br.spec.max_queue_bytes);
+          const bool under_bytes = (br.queued_bytes + msg_bytes <= br.spec.max_queue_bytes);
           return under_count && under_bytes;
         });
-
         if (br.stop.load()) return;
-
         // enqueue
-        br.msg_queue.push_back(item);
-        br.queued_bytes += item->approx_bytes;
+        br.msg_queue.push_back(msg);
+        br.queued_bytes += msg_bytes;
 
         lk.unlock();
         br.cv.notify_one();
@@ -458,35 +487,35 @@ namespace lsy_ros_data_utils::rosbag {
 
       // enforce byte cap
       while (!br.msg_queue.empty() &&
-             (br.queued_bytes + item->approx_bytes > br.spec.max_queue_bytes)) {
+             (br.queued_bytes + msg_bytes > br.spec.max_queue_bytes)) {
         drop_oldest_one();
       }
 
       // If a single message is larger than the entire cap, skip it (can't ever fit)
-      if (item->approx_bytes > br.spec.max_queue_bytes) {
+      if (msg_bytes > br.spec.max_queue_bytes) {
         if (br.spec.warn_on_overflow) {
           const int64_t now_ns = now_ns_steady();
           if (should_warn(br.last_overflow_warn_ns, now_ns, br.spec.overflow_warn_period_sec)) {
             RCLCPP_WARN(this->get_logger(),
                         "[bag=%s] OVERFLOW(drop_oldest): single message too large to fit cap; dropping incoming. incoming=%zu bytes cap=%zu bytes topic=%s",
                         br.spec.name.c_str(),
-                        item->approx_bytes, br.spec.max_queue_bytes, topic_name.c_str());
+                        msg_bytes, br.spec.max_queue_bytes, topic_name.c_str());
           }
         }
         continue;
       }
 
       // If still can't fit (should be rare), drop incoming
-      if (br.queued_bytes + item->approx_bytes > br.spec.max_queue_bytes) {
+      if (br.queued_bytes + msg_bytes > br.spec.max_queue_bytes) {
         br.dropped_msgs.fetch_add(1, std::memory_order_relaxed);
-        br.dropped_bytes.fetch_add(item->approx_bytes, std::memory_order_relaxed);
+        br.dropped_bytes.fetch_add(msg_bytes, std::memory_order_relaxed);
         br.overflow_events.fetch_add(1, std::memory_order_relaxed);
       } else {
-        br.msg_queue.push_back(item);
-        br.queued_bytes += item->approx_bytes;
+        br.msg_queue.push_back(msg);
+        br.queued_bytes += msg_bytes;
       }
 
-      // Rate-limited aggregated warning (only if we actually dropped something recently)
+      // Rate-limited aggregated warning
       if (br.spec.warn_on_overflow) {
         const int64_t now_ns = now_ns_steady();
         if (should_warn(br.last_overflow_warn_ns, now_ns, br.spec.overflow_warn_period_sec)) {
@@ -504,32 +533,31 @@ namespace lsy_ros_data_utils::rosbag {
           }
         }
       }
-
+      // Don't forget to unlock and notify the writer thread!
       lk.unlock();
       br.cv.notify_one();
     }
   }
-
 
   // ---------------- writer thread ----------------
 
   void
   BagRecorderComponent::writer_loop(BagRuntime *br) const {
     while (!br->stop.load() && rclcpp::ok()) {
-      //RCLCPP_INFO(get_logger(), "Writer thread writting for bag '%s'", br->spec.name.c_str());
-      std::deque<std::shared_ptr<const BagItem> > batch; {
+      std::deque<std::shared_ptr<rosbag2_storage::SerializedBagMessage> > batch; {
         std::unique_lock<std::mutex> lk(br->mtx);
         br->cv.wait(lk, [&]() { return br->stop.load() || !br->msg_queue.empty(); });
-        if (br->stop.load()) break;
+
+        // Ensure we flush any remaining messages before exiting on shutdown
+        if (br->stop.load() && br->msg_queue.empty()) break;
+
+        // O(1) swap: Instantly transfers all pointers to the local batch
         batch.swap(br->msg_queue);
         br->queued_bytes = 0;
       }
 
-      for (const auto &item: batch) {
-        auto bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
-        bag_msg->topic_name = item->topic_name;
-        bag_msg->serialized_data = item->payload;
-        set_bag_message_timestamps(*bag_msg, item->send_ns, item->recv_ns);
+      // Pure disk I/O execution. Zero heap allocations happening here!
+      for (const auto &bag_msg: batch) {
         br->writer.write(bag_msg);
       }
       // If producers are blocked, wake them
@@ -537,16 +565,12 @@ namespace lsy_ros_data_utils::rosbag {
     }
 
     // drain on shutdown
-    std::deque<std::shared_ptr<const BagItem> > batch_tail; {
+    std::deque<std::shared_ptr<rosbag2_storage::SerializedBagMessage> > batch_tail; {
       std::lock_guard<std::mutex> lk(br->mtx);
       batch_tail.swap(br->msg_queue);
       br->queued_bytes = 0;
     }
-    for (const auto &item: batch_tail) {
-      auto bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
-      bag_msg->topic_name = item->topic_name;
-      bag_msg->serialized_data = item->payload;
-      set_bag_message_timestamps(*bag_msg, item->send_ns, item->recv_ns);
+    for (const auto &bag_msg: batch_tail) {
       br->writer.write(bag_msg);
     }
     RCLCPP_INFO(get_logger(), "Writer thread stopped for bag '%s'", br->spec.name.c_str());
@@ -591,20 +615,19 @@ namespace lsy_ros_data_utils::rosbag {
           const auto &rin = msg->get_rcl_serialized_message();
           auto payload = BagRecorderComponent::make_rcutils_uint8_array_copy(rin);
 
-          auto item = std::make_shared<BagItem>();
-          item->topic_name = topic;
-          item->send_ns = send_ns;
-          item->recv_ns = recv_ns;
-          item->payload = std::move(payload);
-          item->approx_bytes = item->payload ? item->payload->buffer_length : 0;
-          this->fanout_enqueue_item(topic, std::move(item));
+          // Use the new helper!
+          this->build_and_enqueue_msg(topic, send_ns, recv_ns, std::move(payload));
         };
+
+        auto subscription_options = rclcpp::SubscriptionOptions();
+        subscription_options.callback_group = topic_to_callback_groups_.at(topic);
 
         auto sub = this->create_generic_subscription(
           topic,
           type,
           qos,
-          std::move(cb));
+          std::move(cb),
+          subscription_options);
 
         subs_.push_back(sub);
         continue;
@@ -615,8 +638,17 @@ namespace lsy_ros_data_utils::rosbag {
     }
   }
 
-  //----------------- monitoring --------------------
+  void BagRecorderComponent::build_and_enqueue_msg(const std::string &topic_name, int64_t send_ns, int64_t recv_ns,
+                                                   std::shared_ptr<rcutils_uint8_array_t> payload) {
+    auto bag_msg = std::make_shared<rosbag2_storage::SerializedBagMessage>();
+    bag_msg->topic_name = topic_name;
+    this->set_bag_message_timestamps(*bag_msg, send_ns, recv_ns);
+    bag_msg->serialized_data = std::move(payload);
 
+    this->fanout_enqueue_item(std::move(bag_msg));
+  }
+
+  //----------------- monitoring --------------------
   void BagRecorderComponent::on_rx(const std::string &topic, int64_t recv_ns_steady) {
     if (!monitor_cfg_.enabled) return;
 
@@ -668,25 +700,24 @@ namespace lsy_ros_data_utils::rosbag {
     RCLCPP_INFO(get_logger(), "%-40s  %8s  %8s  %8s  %s",
                 "topic", "ewmaHz", "warn<", "count", "rate");
 
-    static std::vector<std::pair<std::string, TopicStats*>> topic_stats_container;
+    static std::vector<std::pair<std::string, TopicStats *> > topic_stats_container;
 
-    if (first_run)
-    {
+    if (first_run) {
       topic_stats_container.reserve(topic_stats_.size());
 
-      for (auto &kv : topic_stats_) {
-          topic_stats_container.emplace_back(kv.first, &kv.second);
+      for (auto &kv: topic_stats_) {
+        topic_stats_container.emplace_back(kv.first, &kv.second);
       }
 
       // Sort by topic name
       std::sort(topic_stats_container.begin(), topic_stats_container.end(),
                 [](const auto &a, const auto &b) {
-                    return a.first < b.first;
+                  return a.first < b.first;
                 });
       first_run = false;
     }
 
-    
+
     for (auto &kv: topic_stats_container) {
       const std::string &topic = kv.first;
       TopicStats &st = *kv.second;

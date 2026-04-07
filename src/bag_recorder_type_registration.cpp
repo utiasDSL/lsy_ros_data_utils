@@ -55,6 +55,7 @@
 
 #ifdef HAVE_LIVOX_ROS_DRIVER2
 #include <livox_ros_driver2/msg/custom_msg.hpp>
+#include <livox_ros_driver2/msg/custom_point.hpp>
 #endif
 
 #ifdef HAVE_SEPTENTRIO_GNSS_DRIVER
@@ -119,6 +120,7 @@
 #include <mavros_msgs/msg/radio_status.hpp>
 #include <mavros_msgs/msg/thrust.hpp>
 #include <mavros_msgs/msg/trajectory.hpp>
+#include <mavros_msgs/msg/waypoint.hpp>
 #include <mavros_msgs/msg/waypoint_list.hpp>
 #include <mavros_msgs/msg/waypoint_reached.hpp>
 #include <mavros_msgs/msg/estimator_status.hpp>
@@ -211,7 +213,6 @@ namespace lsy_ros_data_utils::rosbag {
     register_type<septentrio_gnss_driver::msg::GPSNav>("septentrio_gnss_driver/msg/GPSNav");
     register_type<septentrio_gnss_driver::msg::GPSUtc>("septentrio_gnss_driver/msg/GPSUtc");
     register_type<septentrio_gnss_driver::msg::DiffCorrIn>("septentrio_gnss_driver/msg/DiffCorrIn");
-    register_type<septentrio_gnss_driver::msg::BlockHeader>("septentrio_gnss_driver/msg/BlockHeader");
     register_type<septentrio_gnss_driver::msg::FastCorr>("septentrio_gnss_driver/msg/FastCorr");
     register_type<septentrio_gnss_driver::msg::GEOFastCorr>("septentrio_gnss_driver/msg/GEOFastCorr");
     register_type<septentrio_gnss_driver::msg::LTCorr>("septentrio_gnss_driver/msg/LTCorr");

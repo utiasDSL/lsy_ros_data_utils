@@ -1,0 +1,3 @@
+mcap:
+  chunk_size: 104857600 # 100 MB chunks
+  compression: "none"  # Options: "none", "lz4", "zstd"

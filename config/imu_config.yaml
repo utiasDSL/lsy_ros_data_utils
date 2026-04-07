@@ -6,14 +6,16 @@ monitor:
   warn_grace_sec: 2.0
   use_ansi_color: true
 
+num_callback_groups: 1
+
 bags:
   - name: "saberguide_imus"
     bag_uri: "/home/user/00_bags"
     storage_id: "mcap"
-    write_frequency_hz: 10.0
     uri_with_datetime: true
     max_queue_bytes: 1073741824     # 1GiB MiB
     max_queue_size: 2000          # secondary cap
+    bag_cache_size: 1             # GB
     overflow_policy: block  # or "block" drop_oldest
     warn_on_overflow: true
     overflow_warn_period_sec: 1.0
@@ -29,6 +31,7 @@ bags:
         monitor:
           expected_hz: 50.0
           warn_below_hz: 30.
+        callback_group_id: 0
       - name: "/mavros/imu/data"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -36,6 +39,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
+        callback_group_id: 0
       - name: "/mavros/imu/mag"
         type: "sensor_msgs/msg/MagneticField"
         qos: "sensor"
@@ -43,6 +47,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.
+        callback_group_id: 0
       - name: "/mavros/imu/temperature_imu"
         type: "sensor_msgs/msg/Temperature"
         qos: "sensor"
@@ -50,6 +55,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 8.
+        callback_group_id: 0
 
       # realsense
       - name: "/rs456/camera/imu"
@@ -59,6 +65,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
 
       # zed
       - name: "/zed/zed_node/imu/data"
@@ -68,6 +75,7 @@ bags:
         monitor:
           expected_hz: 100.0
           warn_below_hz: 80.0
+        callback_group_id: 0
       - name: "/zed/zed_node/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -75,6 +83,7 @@ bags:
         monitor:
           expected_hz: 100.0
           warn_below_hz: 80.0
+        callback_group_id: 0
       - name: "/zed/zed_node/temperature/imu"
         type: "sensor_msgs/msg/Temperature"
         qos: "sensor"
@@ -82,6 +91,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
+        callback_group_id: 0
       - name: "/zed/zed_node/status/heartbeat"
         type: "zed_msgs/msg/Heartbeat"
         qos: "sensor"
@@ -89,6 +99,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: 0.5
+        callback_group_id: 0
       - name: "/zed/zed_node/status/health"
         type: "zed_msgs/msg/HealthStatusStamped"
         qos: "sensor"
@@ -96,6 +107,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 0
       - name: "/zed/zed_node/left_cam_imu_transform"
         type: "geometry_msgs/msg/TransformStamped"
         qos: "sensor"
@@ -103,6 +115,7 @@ bags:
         monitor:
           expected_hz: 100.0
           warn_below_hz: 80.0
+        callback_group_id: 0
       - name: "/livox/imu"
         type: "sensor_msgs/msg/Imu"
         qos: "default"
@@ -110,15 +123,9 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
 
       # rslidar
-      #- name: "/rslidar/packets"
-      #  type: "rslidar_msg/msg/RslidarPacket"
-      #  qos: "default"
-      #  mode: "generic"
-      #  monitor:
-      #    expected_hz: 10.0
-     #     warn_below_hz: 9.0
       - name: "/rslidar/imu_data"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -126,6 +133,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
 
         ## septentrio
       
@@ -136,6 +144,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
 
       - name: "/microstrain/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
@@ -144,6 +153,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
       - name: "/microstrain/imu/mag"
         type: "sensor_msgs/msg/MagneticField"
         qos: "sensor"
@@ -151,6 +161,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
       - name: "/microstrain/imu/pressure"
         type: "sensor_msgs/msg/FluidPressure"
         qos: "sensor"
@@ -158,6 +169,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
 
 
 

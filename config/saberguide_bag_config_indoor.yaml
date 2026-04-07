@@ -6,15 +6,17 @@ monitor:
   warn_grace_sec: 2.0
   use_ansi_color: true
 
+num_callback_groups: 3
+
 bags:
   - name: "saberguide"
     bag_uri: "/home/user/00_bags"
     storage_id: "mcap"
-    write_frequency_hz: 10.0
     uri_with_datetime: true
     max_queue_bytes: 2073741824     # 1GiB MiB
     max_queue_size: 5000          # secondary cap
-    overflow_policy: drop_oldest  # or "block" drop_oldest
+    bag_cache_size: 4             # GB
+    overflow_policy: block  # or "block" drop_oldest
     warn_on_overflow: true
     overflow_warn_period_sec: 1.0
     compress_image: false
@@ -30,6 +32,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 8.0
+        callback_group_id: 0
       - name: "/mavros/estimator_status"
         type: "mavros_msgs/msg/EstimatorStatus"
         qos: "default"
@@ -37,6 +40,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
+        callback_group_id: 0
       - name: "/mavros/gps_input/gps_input"
         type: "mavros_msgs/msg/GPSINPUT"
         qos: "default"
@@ -44,6 +48,7 @@ bags:
         monitor:
           expected_hz: 50.0
           warn_below_hz: 30.
+        callback_group_id: 0
       - name: "/mavros/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -51,6 +56,7 @@ bags:
         monitor:
           expected_hz: 50.0
           warn_below_hz: 30.
+        callback_group_id: 0
       - name: "/mavros/imu/data"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -58,6 +64,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
+        callback_group_id: 0
       - name: "/mavros/imu/mag"
         type: "sensor_msgs/msg/MagneticField"
         qos: "sensor"
@@ -65,6 +72,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.
+        callback_group_id: 0
       - name: "/mavros/local_position/odom"
         type: "nav_msgs/msg/Odometry"
         qos: "sensor"
@@ -72,6 +80,7 @@ bags:
         monitor:
           expected_hz: 30.0
           warn_below_hz: 15.
+        callback_group_id: 0
       - name: "/mavros/local_position/pose"
         type: "geometry_msgs/msg/PoseStamped"
         qos: "sensor"
@@ -79,13 +88,7 @@ bags:
         monitor:
           expected_hz: 30.0
           warn_below_hz: 15.
-      - name: "/mavros/local_position/velocity_local"
-        type: "geometry_msgs/msg/TwistStamped"
-        qos: "sensor"
-        mode: "generic"
-        monitor:
-          expected_hz: 30.0
-          warn_below_hz: 8.
+        callback_group_id: 0
       - name: "/mavros/px4flow/raw/optical_flow_rad"
         type: "mavros_msgs/msg/OpticalFlowRad"
         qos: "default"
@@ -93,6 +96,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 8.
+        callback_group_id: 0
       - name: "/mavros/rc/in"
         type: "mavros_msgs/msg/RCIn"
         qos: "default"
@@ -100,6 +104,7 @@ bags:
         monitor:
           expected_hz: 20.0
           warn_below_hz: 10.
+        callback_group_id: 0
       - name: "/mavros/state"
         type: "mavros_msgs/msg/State"
         qos: "default"
@@ -107,6 +112,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .8
+        callback_group_id: 0
       - name: "/mavros/vision_pose/pose"
         type: "geometry_msgs/msg/PoseStamped"
         qos: "sensor"
@@ -114,6 +120,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 100.
+        callback_group_id: 0
 
       # microstrain
       - name: "/microstrain/imu/data"
@@ -123,6 +130,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
       - name: "/microstrain/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -130,6 +138,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
       - name: "/microstrain/imu/mag"
         type: "sensor_msgs/msg/MagneticField"
         qos: "sensor"
@@ -137,6 +146,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
       - name: "/microstrain/imu/pressure"
         type: "sensor_msgs/msg/FluidPressure"
         qos: "sensor"
@@ -144,7 +154,8 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
-      
+        callback_group_id: 0
+
       # realsense
       - name: "/rs456/camera/color/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
@@ -153,6 +164,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 12.0
+        callback_group_id: 1
       - name: "/rs456/camera/color/image_raw"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
@@ -160,6 +172,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 12.0
+        callback_group_id: 1
       - name: "/rs456/camera/depth/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
@@ -167,6 +180,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 12.0
+        callback_group_id: 1
       - name: "/rs456/camera/depth/image_rect_raw"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
@@ -174,6 +188,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 12.0
+        callback_group_id: 1
       - name: "/rs456/camera/infra1/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
@@ -181,6 +196,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 12.0
+        callback_group_id: 1
       - name: "/rs456/camera/infra1/image_rect_raw"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
@@ -188,6 +204,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 12.0
+        callback_group_id: 1
       - name: "/rs456/camera/infra2/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
@@ -195,6 +212,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 12.0
+        callback_group_id: 1
       - name: "/rs456/camera/infra2/image_rect_raw"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
@@ -202,6 +220,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 12.0
+        callback_group_id: 1
       - name: "/rs456/camera/imu"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -209,6 +228,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
 
       # zed
       - name: "/zed/zed_node/imu/data"
@@ -218,6 +238,7 @@ bags:
         monitor:
           expected_hz: 100.0
           warn_below_hz: 80.0
+        callback_group_id: 0
       - name: "/zed/zed_node/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -225,6 +246,7 @@ bags:
         monitor:
           expected_hz: 100.0
           warn_below_hz: 80.0
+        callback_group_id: 0
       - name: "/zed/zed_node/depth/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
@@ -232,6 +254,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 2
       - name: "/zed/zed_node/depth/depth_registered"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
@@ -239,6 +262,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 2
       - name: "/zed/zed_node/left/color/rect/image/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
@@ -246,6 +270,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 2
       - name: "/zed/zed_node/left/color/rect/image"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
@@ -253,6 +278,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 2
       - name: "/zed/zed_node/right/color/rect/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
@@ -260,6 +286,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 2
       - name: "/zed/zed_node/right/color/rect/image"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
@@ -267,6 +294,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 2
       - name: "/zed/zed_node/odom"
         type: "nav_msgs/msg/Odometry"
         qos: "sensor"
@@ -274,6 +302,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 0
       - name: "/zed/zed_node/pose"
         type: "geometry_msgs/msg/PoseStamped"
         qos: "sensor"
@@ -281,6 +310,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 0
       - name: "/zed/zed_node/temperature/imu"
         type: "sensor_msgs/msg/Temperature"
         qos: "sensor"
@@ -288,6 +318,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
+        callback_group_id: 0
       - name: "/zed/zed_node/status/heartbeat"
         type: "zed_msgs/msg/Heartbeat"
         qos: "sensor"
@@ -295,6 +326,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: 0.5
+        callback_group_id: 0
       - name: "/zed/zed_node/status/health"
         type: "zed_msgs/msg/HealthStatusStamped"
         qos: "sensor"
@@ -302,6 +334,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 0
       - name: "/zed/zed_node/pose/status"
         type: "zed_msgs/msg/PosTrackStatus"
         qos: "sensor"
@@ -309,6 +342,7 @@ bags:
         monitor:
           expected_hz: 15.0
           warn_below_hz: 10.0
+        callback_group_id: 0
       - name: "/zed/zed_node/left_cam_imu_transform"
         type: "geometry_msgs/msg/TransformStamped"
         qos: "sensor"
@@ -316,6 +350,8 @@ bags:
         monitor:
           expected_hz: 100.0
           warn_below_hz: 80.0
+        callback_group_id: 0
+
       - name: "/livox/lidar"
         type: "livox_ros_driver2/msg/CustomMsg"
         qos: "default"
@@ -323,6 +359,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
+        callback_group_id: 1
       - name: "/livox/points"
         type: "sensor_msgs/msg/PointCloud2"
         qos: "sensor"
@@ -330,6 +367,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
+        callback_group_id: 1
       - name: "/livox/imu"
         type: "sensor_msgs/msg/Imu"
         qos: "default"
@@ -337,6 +375,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
 
       - name: "/rslidar/points"
         type: "sensor_msgs/msg/PointCloud2"
@@ -345,6 +384,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
+        callback_group_id: 1
       - name: "/rslidar/imu"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
@@ -352,3 +392,6 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
+        callback_group_id: 0
+
+
