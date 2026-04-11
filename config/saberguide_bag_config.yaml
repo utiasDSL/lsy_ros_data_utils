@@ -6,7 +6,7 @@ monitor:
   warn_grace_sec: 2.0
   use_ansi_color: true
 
-num_callback_groups: 4
+num_callback_groups: 3
 
 bags:
   - name: "saberguide"
@@ -165,6 +165,14 @@ bags:
           warn_below_hz: 180.0
         callback_group_id: 0
 
+      - name: "/livox/lidar"
+        type: "livox_ros_driver2/msg/CustomMsg"
+        qos: "default"
+        mode: "typed"
+        monitor:
+          expected_hz: 10.0
+          warn_below_hz: 9.0
+        callback_group_id: 1
       - name: "/livox/points"
         type: "sensor_msgs/msg/PointCloud2"
         qos: "sensor"
@@ -185,7 +193,7 @@ bags:
       - name: "/rslidar/points"
         type: "sensor_msgs/msg/PointCloud2"
         qos: "default"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
@@ -193,7 +201,7 @@ bags:
       - name: "/rslidar/imu"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
@@ -605,6 +613,14 @@ bags:
           warn_below_hz: 10.0
         callback_group_id: 2
       - name: "/zed/zed_node/right/color/rect/image"
+        type: "sensor_msgs/msg/Image"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 2
+      - name: "/zed/zed_node/confidence/confidence_map"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"

@@ -125,15 +125,30 @@ namespace lsy_ros_data_utils::rosbag {
   }
 
   BagRecorderComponent::~BagRecorderComponent() {
+
+    is_shutting_down_.store(true);
+
+    subs_.clear();
+
+    // 3. Wait for all currently executing ghost callbacks to physically exit
+    while (active_callbacks_.load() > 0) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
     for (const auto &br: bags_) {
       br->stop.store(true);
       br->cv.notify_all();
     }
+
     for (const auto &br: bags_) {
       if (br->thread.joinable()) {
         br->thread.join();
       }
     }
+
+
+    RCLCPP_INFO(get_logger(), "BagRecorderComponent destroying, waiting for 5 seconds.");
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     RCLCPP_INFO(get_logger(), "BagRecorderComponent destroyed.");
   }
 
@@ -573,6 +588,9 @@ namespace lsy_ros_data_utils::rosbag {
     for (const auto &bag_msg: batch_tail) {
       br->writer.write(bag_msg);
     }
+    // --- LOOP EXITED. TIME TO SHUT DOWN ---
+    RCLCPP_INFO(get_logger(), "Draining complete. Closing bag '%s'...", br->spec.name.c_str());
+    br->writer.close();
     RCLCPP_INFO(get_logger(), "Writer thread stopped for bag '%s'", br->spec.name.c_str());
   }
 
@@ -605,6 +623,18 @@ namespace lsy_ros_data_utils::rosbag {
       if (want_generic) {
         // Generic subscription: callback receives serialized bytes already.
         auto cb = [this, topic](std::shared_ptr<rclcpp::SerializedMessage> msg) {
+
+          if (this->is_shutting_down_.load(std::memory_order_relaxed)) return;
+
+          this->active_callbacks_.fetch_add(1, std::memory_order_acquire);
+            struct CallbackTracker {
+              std::atomic<int>& count;
+              CallbackTracker(std::atomic<int>& c) : count(c) {}
+              ~CallbackTracker() { 
+                count.fetch_sub(1, std::memory_order_release); 
+              }
+            } tracker(this->active_callbacks_);
+
           // monitoring
           const int64_t recv_ns_steady = now_ns_steady();
           this->on_rx(topic, recv_ns_steady);

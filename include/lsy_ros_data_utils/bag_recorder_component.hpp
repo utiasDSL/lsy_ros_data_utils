@@ -193,6 +193,9 @@ namespace lsy_ros_data_utils::rosbag {
     int jpeg_quality_{95};
     int png_level_{3};
     std::string compression_type_{"png"};
+
+    std::atomic<bool> is_shutting_down_{false};
+    std::atomic<int> active_callbacks_{0};
     // loaded bags
     std::vector<std::unique_ptr<BagRuntime> > bags_;
 
@@ -241,6 +244,22 @@ namespace lsy_ros_data_utils::rosbag {
 
           // callback receives a shared_ptr to the in-memory message (intra-process friendly)
           auto cb = [this, topic_name, compress_images](typename MsgT::ConstSharedPtr msg) {
+
+            if (this->is_shutting_down_.load(std::memory_order_relaxed)) {
+              return;
+            }
+
+            // 2. Track this active callback
+            this->active_callbacks_.fetch_add(1, std::memory_order_acquire);
+            struct CallbackTracker {
+              std::atomic<int>& count;
+              CallbackTracker(std::atomic<int>& c) : count(c) {}
+              ~CallbackTracker() { 
+                count.fetch_sub(1, std::memory_order_release); 
+              }
+            } tracker(this->active_callbacks_);
+
+            
             // monitoring: steady clock, lock-free
             const int64_t recv_ns_steady = now_ns_steady();
             this->on_rx(topic_name, recv_ns_steady);

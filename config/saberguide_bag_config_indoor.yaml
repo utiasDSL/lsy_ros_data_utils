@@ -12,10 +12,11 @@ bags:
   - name: "saberguide"
     bag_uri: "/home/user/00_bags"
     storage_id: "mcap"
+    storage_config_file: "mcap_config.yaml"
     uri_with_datetime: true
     max_queue_bytes: 2073741824     # 1GiB MiB
     max_queue_size: 5000          # secondary cap
-    bag_cache_size: 4             # GB
+    bag_cache_size: 2             # GB
     overflow_policy: block  # or "block" drop_oldest
     warn_on_overflow: true
     overflow_warn_period_sec: 1.0
@@ -40,14 +41,6 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
-        callback_group_id: 0
-      - name: "/mavros/gps_input/gps_input"
-        type: "mavros_msgs/msg/GPSINPUT"
-        qos: "default"
-        mode: "generic"
-        monitor:
-          expected_hz: 50.0
-          warn_below_hz: 30.
         callback_group_id: 0
       - name: "/mavros/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
@@ -88,6 +81,14 @@ bags:
         monitor:
           expected_hz: 30.0
           warn_below_hz: 15.
+        callback_group_id: 0
+      - name: "/mavros/local_position/velocity_local"
+        type: "geometry_msgs/msg/TwistStamped"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 30.0
+          warn_below_hz: 8.
         callback_group_id: 0
       - name: "/mavros/px4flow/raw/optical_flow_rad"
         type: "mavros_msgs/msg/OpticalFlowRad"
@@ -156,6 +157,64 @@ bags:
           warn_below_hz: 180.0
         callback_group_id: 0
 
+      - name: "/livox/lidar"
+        type: "livox_ros_driver2/msg/CustomMsg"
+        qos: "default"
+        mode: "typed"
+        monitor:
+          expected_hz: 10.0
+          warn_below_hz: 9.0
+        callback_group_id: 1
+      - name: "/livox/points"
+        type: "sensor_msgs/msg/PointCloud2"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 10.0
+          warn_below_hz: 9.0
+        callback_group_id: 1
+      - name: "/livox/imu"
+        type: "sensor_msgs/msg/Imu"
+        qos: "default"
+        mode: "typed"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+        callback_group_id: 0
+
+      - name: "/rslidar/points"
+        type: "sensor_msgs/msg/PointCloud2"
+        qos: "default"
+        mode: "typed"
+        monitor:
+          expected_hz: 10.0
+          warn_below_hz: 9.0
+        callback_group_id: 1
+      - name: "/rslidar/imu"
+        type: "sensor_msgs/msg/Imu"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 200.0
+          warn_below_hz: 180.0
+        callback_group_id: 0
+
+  - name: "saberguide_realsense"
+    bag_uri: "/home/user/00_bags"
+    storage_id: "mcap"
+    storage_config_file: "mcap_config.yaml"
+    uri_with_datetime: true
+    max_queue_bytes: 2073741824     # 1GiB MiB
+    max_queue_size: 5000          # secondary cap
+    bag_cache_size: 2             # GB
+    overflow_policy: block  # or "block" drop_oldest
+    warn_on_overflow: true
+    overflow_warn_period_sec: 1.0
+    compress_image: false
+    jpeg_quality: 95
+    png_level: 3
+    compression_type: "png"
+    topics:
       # realsense
       - name: "/rs456/camera/color/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
@@ -230,6 +289,22 @@ bags:
           warn_below_hz: 180.0
         callback_group_id: 0
 
+  - name: "saberguide_zed"
+    bag_uri: "/home/user/00_bags"
+    storage_id: "mcap"
+    storage_config_file: "mcap_config.yaml"
+    uri_with_datetime: true
+    max_queue_bytes: 2073741824     # 1GiB MiB
+    max_queue_size: 5000          # secondary cap
+    bag_cache_size: 3             # GB
+    overflow_policy: block  # or "block" drop_oldest
+    warn_on_overflow: true
+    overflow_warn_period_sec: 1.0
+    compress_image: false
+    jpeg_quality: 95
+    png_level: 3
+    compression_type: "png"
+    topics:
       # zed
       - name: "/zed/zed_node/imu/data"
         type: "sensor_msgs/msg/Imu"
@@ -295,6 +370,14 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 10.0
         callback_group_id: 2
+      - name: "/zed/zed_node/confidence/confidence_map"
+        type: "sensor_msgs/msg/Image"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 2
       - name: "/zed/zed_node/odom"
         type: "nav_msgs/msg/Odometry"
         qos: "sensor"
@@ -352,46 +435,5 @@ bags:
           warn_below_hz: 80.0
         callback_group_id: 0
 
-      - name: "/livox/lidar"
-        type: "livox_ros_driver2/msg/CustomMsg"
-        qos: "default"
-        mode: "typed"
-        monitor:
-          expected_hz: 10.0
-          warn_below_hz: 9.0
-        callback_group_id: 1
-      - name: "/livox/points"
-        type: "sensor_msgs/msg/PointCloud2"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 10.0
-          warn_below_hz: 9.0
-        callback_group_id: 1
-      - name: "/livox/imu"
-        type: "sensor_msgs/msg/Imu"
-        qos: "default"
-        mode: "typed"
-        monitor:
-          expected_hz: 200.0
-          warn_below_hz: 180.0
-        callback_group_id: 0
-
-      - name: "/rslidar/points"
-        type: "sensor_msgs/msg/PointCloud2"
-        qos: "default"
-        mode: "generic"
-        monitor:
-          expected_hz: 10.0
-          warn_below_hz: 9.0
-        callback_group_id: 1
-      - name: "/rslidar/imu"
-        type: "sensor_msgs/msg/Imu"
-        qos: "sensor"
-        mode: "generic"
-        monitor:
-          expected_hz: 200.0
-          warn_below_hz: 180.0
-        callback_group_id: 0
 
 
