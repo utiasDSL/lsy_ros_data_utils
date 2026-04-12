@@ -157,6 +157,8 @@ namespace lsy_ros_data_utils::rosbag {
       std::atomic<uint64_t> dropped_bytes{0};
       std::atomic<uint64_t> overflow_events{0};
       std::atomic<int64_t> last_overflow_warn_ns{0}; // steady clock ns
+      std::atomic<uint64_t> total_enqueued_msgs{0};
+      std::atomic<uint64_t> total_written_msgs{0};
     };
 
     void open_bag_and_create_topics(BagRuntime &br) const;
@@ -251,14 +253,14 @@ namespace lsy_ros_data_utils::rosbag {
             }
 
             // 2. Track this active callback
-            this->active_callbacks_.fetch_add(1, std::memory_order_acquire);
-            struct CallbackTracker {
-              std::atomic<int>& count;
-              CallbackTracker(std::atomic<int>& c) : count(c) {}
-              ~CallbackTracker() { 
-                count.fetch_sub(1, std::memory_order_release); 
-              }
-            } tracker(this->active_callbacks_);
+            //this->active_callbacks_.fetch_add(1, std::memory_order_acquire);
+           // struct CallbackTracker {
+           //   std::atomic<int>& count;
+            //  CallbackTracker(std::atomic<int>& c) : count(c) {}
+            //  ~CallbackTracker() {
+            //    count.fetch_sub(1, std::memory_order_release);
+             // }
+            //} tracker(this->active_callbacks_);
 
             
             // monitoring: steady clock, lock-free

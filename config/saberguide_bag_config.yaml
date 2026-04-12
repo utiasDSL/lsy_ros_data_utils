@@ -544,7 +544,7 @@ bags:
     storage_id: "mcap"
     storage_config_file: "mcap_config.yaml"
     uri_with_datetime: true
-    max_queue_bytes: 2073741824     # 1GiB MiB
+    max_queue_bytes: 4294967296     # 1GiB MiB
     max_queue_size: 5000          # secondary cap
     bag_cache_size: 4             # GB
     overflow_policy: block  # or "block" drop_oldest

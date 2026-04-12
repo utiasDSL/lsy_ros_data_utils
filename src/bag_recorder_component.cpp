@@ -125,15 +125,14 @@ namespace lsy_ros_data_utils::rosbag {
   }
 
   BagRecorderComponent::~BagRecorderComponent() {
-
     is_shutting_down_.store(true);
 
     subs_.clear();
 
     // 3. Wait for all currently executing ghost callbacks to physically exit
-    while (active_callbacks_.load() > 0) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
+    // while (active_callbacks_.load() > 0) {
+    //   std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    // }
 
     for (const auto &br: bags_) {
       br->stop.store(true);
@@ -200,8 +199,8 @@ namespace lsy_ros_data_utils::rosbag {
                                   : (2048ull * 1024 * 1024); // 1 GiB default
 
       br->spec.max_bag_size = bag["max_bag_size"]
-                                  ? bag["max_bag_size"].as<size_t>() * 1024 * 1024 * 1024
-                                  : (50ull * 1024 * 1024 * 1024); // 1 GiB default
+                                ? bag["max_bag_size"].as<size_t>() * 1024 * 1024 * 1024
+                                : (50ull * 1024 * 1024 * 1024); // 1 GiB default
 
       br->spec.overflow_policy = bag["overflow_policy"] && bag["overflow_policy"].as<std::string>() == "block"
                                    ? BagSpec::OverflowPolicy::BLOCK
@@ -215,7 +214,9 @@ namespace lsy_ros_data_utils::rosbag {
       br->spec.uri_with_datetime = bag["uri_with_datetime"] ? bag["uri_with_datetime"].as<bool>() : true;
 
       static const auto package_path = ament_index_cpp::get_package_share_directory("lsy_ros_data_utils") + "/config/";
-      br->spec.storage_config_uri = bag["storage_config_file"] ? package_path + bag["storage_config_file"].as<std::string>() : std::string("");
+      br->spec.storage_config_uri = bag["storage_config_file"]
+                                      ? package_path + bag["storage_config_file"].as<std::string>()
+                                      : std::string("");
 
       compress_images_ = bag["compress_image"] ? bag["compress_image"].as<bool>() : false;
 
@@ -533,16 +534,21 @@ namespace lsy_ros_data_utils::rosbag {
       } else {
         br.msg_queue.push_back(msg);
         br.queued_bytes += msg_bytes;
+        br.overflow_events.fetch_add(1, std::memory_order_relaxed);
       }
 
       // Rate-limited aggregated warning
       if (br.spec.warn_on_overflow) {
-        const int64_t now_ns = now_ns_steady();
-        if (should_warn(br.last_overflow_warn_ns, now_ns, br.spec.overflow_warn_period_sec)) {
-          const auto dm = br.dropped_msgs.exchange(0, std::memory_order_relaxed);
-          const auto db = br.dropped_bytes.exchange(0, std::memory_order_relaxed);
+        const auto current_dm = br.dropped_msgs.load(std::memory_order_relaxed);
+        if (current_dm > 0) {
+          // Only check/consume the timer if we actually dropped something
+          const int64_t now_ns = now_ns_steady();
 
-          if (dm > 0) {
+          if (should_warn(br.last_overflow_warn_ns, now_ns, br.spec.overflow_warn_period_sec)) {
+            // Safely extract the counts and reset to 0
+            const auto dm = br.dropped_msgs.exchange(0, std::memory_order_relaxed);
+            const auto db = br.dropped_bytes.exchange(0, std::memory_order_relaxed);
+
             RCLCPP_WARN(this->get_logger(),
                         "[bag=%s] OVERFLOW(drop_oldest): dropped=%llu msgs (%llu bytes) | queued=%zu msgs (%zu bytes) | limits: max_queue_size=%zu max_queue_bytes=%zu",
                         br.spec.name.c_str(),
@@ -579,6 +585,7 @@ namespace lsy_ros_data_utils::rosbag {
       // Pure disk I/O execution. Zero heap allocations happening here!
       for (const auto &bag_msg: batch) {
         br->writer.write(bag_msg);
+        br->total_written_msgs.fetch_add(1, std::memory_order_relaxed);
       }
       // If producers are blocked, wake them
       br->cv.notify_all();
@@ -628,17 +635,16 @@ namespace lsy_ros_data_utils::rosbag {
       if (want_generic) {
         // Generic subscription: callback receives serialized bytes already.
         auto cb = [this, topic](std::shared_ptr<rclcpp::SerializedMessage> msg) {
-
           if (this->is_shutting_down_.load(std::memory_order_relaxed)) return;
 
-          this->active_callbacks_.fetch_add(1, std::memory_order_acquire);
-            struct CallbackTracker {
-              std::atomic<int>& count;
-              CallbackTracker(std::atomic<int>& c) : count(c) {}
-              ~CallbackTracker() { 
-                count.fetch_sub(1, std::memory_order_release); 
-              }
-            } tracker(this->active_callbacks_);
+          //this->active_callbacks_.fetch_add(1, std::memory_order_acquire);
+          //   struct CallbackTracker {
+          //     std::atomic<int>& count;
+          //     CallbackTracker(std::atomic<int>& c) : count(c) {}
+          //     ~CallbackTracker() {
+          //       count.fetch_sub(1, std::memory_order_release);
+          //     }
+          //    } tracker(this->active_callbacks_);
 
           // monitoring
           const int64_t recv_ns_steady = now_ns_steady();
@@ -731,6 +737,10 @@ namespace lsy_ros_data_utils::rosbag {
     std::cout << "\033[2J\033[H" << std::flush;
     const int64_t now_ns = now_ns_steady();
 
+    // ==========================================
+    // 1. TOPIC STATISTICS (Received)
+    // ==========================================
+
     RCLCPP_INFO(get_logger(), "===== BagRecorder Monitor (EWMA tau=%.2fs) =====", monitor_cfg_.ewma_tau_sec);
     RCLCPP_INFO(get_logger(), "%-40s  %8s  %8s  %8s  %s",
                 "topic", "ewmaHz", "warn<", "count", "rate");
@@ -751,7 +761,6 @@ namespace lsy_ros_data_utils::rosbag {
                 });
       first_run = false;
     }
-
 
     for (auto &kv: topic_stats_container) {
       const std::string &topic = kv.first;
@@ -785,6 +794,38 @@ namespace lsy_ros_data_utils::rosbag {
         RCLCPP_INFO(get_logger(), "%s", maybe_yellow(line).c_str());
       } else {
         RCLCPP_INFO(get_logger(), "%s", line);
+      }
+    }
+
+    // ==========================================
+    // 2. BAG I/O STATISTICS (Written vs Dropped)
+    // ==========================================
+    RCLCPP_INFO(get_logger(), " ");
+    RCLCPP_INFO(get_logger(), "===== Bag I/O Statistics =====");
+    RCLCPP_INFO(get_logger(), "%-20s  %10s  %10s  %10s  %10s",
+                "Bag Name", "Enqueued", "Written", "Dropped", "In Queue");
+
+    for (const auto &br: bags_) {
+      const auto enqueued = br->total_enqueued_msgs.load(std::memory_order_relaxed);
+      const auto written = br->total_written_msgs.load(std::memory_order_relaxed);
+      const auto dropped = br->dropped_msgs.load(std::memory_order_relaxed);
+
+      // Lock-free queue size estimation
+      const int64_t in_queue = enqueued - written - dropped;
+
+      char bag_line[256];
+      std::snprintf(bag_line, sizeof(bag_line),
+                    "%-20s  %10llu  %10llu  %10llu  %10lld",
+                    br->spec.name.c_str(),
+                    static_cast<unsigned long long>(enqueued),
+                    static_cast<unsigned long long>(written),
+                    static_cast<unsigned long long>(dropped),
+                    static_cast<long long>(in_queue > 0 ? in_queue : 0));
+
+      if (dropped > 0) {
+        RCLCPP_WARN(get_logger(), "%s", maybe_red(bag_line).c_str());
+      } else {
+        RCLCPP_INFO(get_logger(), "%s", bag_line);
       }
     }
   }
