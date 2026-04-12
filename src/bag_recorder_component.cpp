@@ -346,7 +346,7 @@ namespace lsy_ros_data_utils::rosbag {
     storage_options.storage_id = br.spec.storage_id;
     storage_options.snapshot_mode = false;
     storage_options.max_cache_size = br.spec.bag_cache_size;
-    storage_options.max_bagfile_size = br->spec.max_bag_size;
+    storage_options.max_bagfile_size = br.spec.max_bag_size;
 
     rosbag2_cpp::ConverterOptions converter_options;
     converter_options.input_serialization_format = "cdr";
