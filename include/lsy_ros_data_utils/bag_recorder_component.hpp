@@ -89,6 +89,7 @@ namespace lsy_ros_data_utils::rosbag {
     size_t max_queue_size{20000}; // secondary cap by count
     size_t max_queue_bytes{1024ull * 1024 * 1024}; // 1 GiB per bag default
     size_t bag_cache_size{2ull * 1024 * 1024 * 1024}; // 2 GiB per bag default
+    size_t max_bag_size{50ull * 1024 * 1024 * 1024}; // 50 GiB per bag default
 
     // overflow policy: "drop_oldest" (default) or "block"
     OverflowPolicy overflow_policy = OverflowPolicy::DROP_OLDEST;

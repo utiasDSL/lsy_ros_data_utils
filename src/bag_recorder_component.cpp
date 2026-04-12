@@ -199,6 +199,10 @@ namespace lsy_ros_data_utils::rosbag {
                                   ? bag["bag_cache_size"].as<size_t>() * 1024 * 1024 * 1024
                                   : (2048ull * 1024 * 1024); // 1 GiB default
 
+      br->spec.max_bag_size = bag["max_bag_size"]
+                                  ? bag["max_bag_size"].as<size_t>() * 1024 * 1024 * 1024
+                                  : (50ull * 1024 * 1024 * 1024); // 1 GiB default
+
       br->spec.overflow_policy = bag["overflow_policy"] && bag["overflow_policy"].as<std::string>() == "block"
                                    ? BagSpec::OverflowPolicy::BLOCK
                                    : BagSpec::OverflowPolicy::DROP_OLDEST;
@@ -342,6 +346,7 @@ namespace lsy_ros_data_utils::rosbag {
     storage_options.storage_id = br.spec.storage_id;
     storage_options.snapshot_mode = false;
     storage_options.max_cache_size = br.spec.bag_cache_size;
+    storage_options.max_bagfile_size = br->spec.max_bag_size;
 
     rosbag2_cpp::ConverterOptions converter_options;
     converter_options.input_serialization_format = "cdr";
