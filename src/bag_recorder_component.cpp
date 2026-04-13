@@ -493,6 +493,7 @@ namespace lsy_ros_data_utils::rosbag {
         if (br.stop.load()) return;
         // enqueue
         br.msg_queue.push_back(msg);
+        br.total_enqueued_msgs.fetch_add(1, std::memory_order_relaxed);
         br.queued_bytes += msg_bytes;
 
         lk.unlock();
@@ -534,7 +535,7 @@ namespace lsy_ros_data_utils::rosbag {
       } else {
         br.msg_queue.push_back(msg);
         br.queued_bytes += msg_bytes;
-        br.overflow_events.fetch_add(1, std::memory_order_relaxed);
+        br.total_enqueued_msgs.fetch_add(1, std::memory_order_relaxed);
       }
 
       // Rate-limited aggregated warning
@@ -599,6 +600,7 @@ namespace lsy_ros_data_utils::rosbag {
     }
     for (const auto &bag_msg: batch_tail) {
       br->writer.write(bag_msg);
+      br->total_written_msgs.fetch_add(1, std::memory_order_relaxed);
     }
     // --- LOOP EXITED. TIME TO SHUT DOWN ---
     RCLCPP_INFO(get_logger(), "Draining complete. Closing bag '%s'...", br->spec.name.c_str());
