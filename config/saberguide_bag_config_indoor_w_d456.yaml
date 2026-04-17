@@ -204,7 +204,7 @@ bags:
     storage_id: "mcap"
     storage_config_file: "mcap_config.yaml"
     uri_with_datetime: true
-    max_queue_bytes: 2073741824     # 1GiB MiB
+    max_queue_bytes: 1073741824     # 1GiB MiB
     max_queue_size: 5000          # secondary cap
     bag_cache_size: 2             # GB
     overflow_policy: block  # or "block" drop_oldest
@@ -216,77 +216,77 @@ bags:
     compression_type: "png"
     topics:
       # realsense
-      - name: "/D555/camera/color/camera_info"
+      - name: "/rs456/camera/color/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 14.0
+          warn_below_hz: 12.0
         callback_group_id: 1
-      - name: "/D555/camera/color/image_raw/compressed"
-        type: "sensor_msgs/msg/CompressedImage"
+      - name: "/rs456/camera/color/image_raw"
+        type: "sensor_msgs/msg/Image"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 14.0
+          warn_below_hz: 12.0
         callback_group_id: 1
-      - name: "/D555/camera/depth/camera_info"
+      - name: "/rs456/camera/depth/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 14.0
+          warn_below_hz: 12.0
         callback_group_id: 1
-      - name: "/D555/camera/depth/image_rect_raw/zstd"
-        type: "sensor_msgs/msg/CompressedImage"
+      - name: "/rs456/camera/depth/image_rect_raw"
+        type: "sensor_msgs/msg/Image"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 14.0
+          warn_below_hz: 12.0
         callback_group_id: 1
-      - name: "/D555/camera/infra1/camera_info"
+      - name: "/rs456/camera/infra1/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 14.0
+          warn_below_hz: 12.0
         callback_group_id: 1
-      - name: "/D555/camera/infra1/image_rect_raw/zstd"
-        type: "sensor_msgs/msg/CompressedImage"
+      - name: "/rs456/camera/infra1/image_rect_raw"
+        type: "sensor_msgs/msg/Image"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 14.0
+          warn_below_hz: 12.0
         callback_group_id: 1
-      - name: "/D555/camera/infra2/camera_info"
+      - name: "/rs456/camera/infra2/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 14.0
+          warn_below_hz: 12.0
         callback_group_id: 1
-      - name: "/D555/camera/infra2/image_rect_raw/zstd"
-        type: "sensor_msgs/msg/CompressedImage"
+      - name: "/rs456/camera/infra2/image_rect_raw"
+        type: "sensor_msgs/msg/Image"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 14.0
+          warn_below_hz: 12.0
         callback_group_id: 1
-      - name: "/D555/camera/motion/sample"
+      - name: "/rs456/camera/imu"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
-        mode: "generic"
+        mode: "typed"
         monitor:
-          expected_hz: 100.0
-          warn_below_hz: 90.0
+          expected_hz: 200.0
+          warn_below_hz: 180.0
         callback_group_id: 0
 
   - name: "saberguide_zed"

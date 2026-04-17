@@ -24,11 +24,14 @@
 
 import os
 
+from datetime import datetime 
 from ament_index_python.packages import get_package_share_directory
 from launch.actions import (
     DeclareLaunchArgument,
     OpaqueFunction,
-    LogInfo
+    LogInfo,
+    ExecuteProcess,
+    TimerAction,
 )
 from launch import LaunchDescription
 from launch_ros.actions import (
@@ -40,8 +43,12 @@ from launch_ros.descriptions import ComposableNode
 from launch.substitutions import (
     LaunchConfiguration,
     Command,
-    TextSubstitution
+    TextSubstitution, 
+    PathSubstitution, 
+    FindExecutable
 )
+
+
 
 os.environ["RCUTILS_COLORIZED_OUTPUT"] = "1"
 
@@ -51,15 +58,39 @@ default_config = os.path.join(
     'saberguide_bag_config_indoor.yaml'
 )
 
+def call_zed_record_svo_service(svo_path):
+    # Define the service call parameters
+    service_name = "/zed/zed_node/start_svo_rec"
+    service_type = "zed_msgs/srv/StartSvoRec"
+    # Format the request as a YAML-style string
+    service_request = f"'{{svo_filename: \"{svo_path}\"}}'"
+
+    return ExecuteProcess(
+        cmd=[
+            FindExecutable(name='ros2'),
+            " service call ",
+            service_name,
+            " ",
+            service_type,
+            " ",
+            service_request
+        ],
+        shell=True,
+        output='screen'
+    )
+
 
 def launch_setup(context, *args, **kwargs):
     return_array = []
     container_name = LaunchConfiguration('container_name')
 
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    svo_filename = f"/home/user/01_svo/zed_recording_{timestamp}.svo2"
+
     container_name_val = container_name.perform(context)
     if container_name_val == '':
-        container_exec = 'component_container_isolated'
-        arguments_val = ['--use_multi_threaded_executor', '--ros-args', '--log-level', 'info']
+        container_exec = 'component_container_mt'
+        arguments_val = ['--ros-args', '--log-level', 'info']
         container = ComposableNodeContainer(
             name='bag_container',
             namespace='',
@@ -88,6 +119,17 @@ def launch_setup(context, *args, **kwargs):
         composable_node_descriptions=[bag_recorder_component]
     )
     return_array.append(load_composable_node)
+
+    # Delay the service call by 10 seconds to ensure ZED is fully booted
+    return_array.append(
+        TimerAction(
+            period=2.0,
+            actions=[
+                call_zed_record_svo_service(svo_filename)
+            ]
+        )
+    )
+
     return return_array
 
 
