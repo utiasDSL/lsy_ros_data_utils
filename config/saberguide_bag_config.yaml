@@ -490,7 +490,7 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 14.0
         callback_group_id: 1
-      - name: "/D555/camera/depth/image_rect_raw/zstd"
+      - name: "/D555/camera/depth/image_rect_raw/compressedDepth"
         type: "sensor_msgs/msg/CompressedImage"
         qos: "sensor"
         mode: "generic"
@@ -506,7 +506,7 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 14.0
         callback_group_id: 1
-      - name: "/D555/camera/infra1/image_rect_raw/zstd"
+      - name: "/D555/camera/infra1/image_rect_raw/compressed"
         type: "sensor_msgs/msg/CompressedImage"
         qos: "sensor"
         mode: "generic"
@@ -522,7 +522,7 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 14.0
         callback_group_id: 1
-      - name: "/D555/camera/infra2/image_rect_raw/zstd"
+      - name: "/D555/camera/infra2/image_rect_raw/compressed" 
         type: "sensor_msgs/msg/CompressedImage"
         qos: "sensor"
         mode: "generic"

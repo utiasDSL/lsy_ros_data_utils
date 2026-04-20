@@ -16,7 +16,7 @@ bags:
     uri_with_datetime: true
     max_queue_bytes: 2073741824     # 1GiB MiB
     max_queue_size: 5000          # secondary cap
-    bag_cache_size: 2             # GB
+    bag_cache_size: 1             # GB
     overflow_policy: block  # or "block" drop_oldest
     warn_on_overflow: true
     overflow_warn_period_sec: 1.0
@@ -546,7 +546,7 @@ bags:
     uri_with_datetime: true
     max_queue_bytes: 4294967296     # 1GiB MiB
     max_queue_size: 5000          # secondary cap
-    bag_cache_size: 4             # GB
+    bag_cache_size: 6             # GB
     overflow_policy: block  # or "block" drop_oldest
     warn_on_overflow: true
     overflow_warn_period_sec: 1.0
@@ -588,7 +588,7 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 10.0
         callback_group_id: 1
-      - name: "/zed/zed_node/left/color/rect/image/camera_info"
+      - name: "/zed/zed_node/left/color/raw/image/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
         mode: "typed"
@@ -596,7 +596,7 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 10.0
         callback_group_id: 2
-      - name: "/zed/zed_node/left/color/rect/image"
+      - name: "/zed/zed_node/left/color/raw/image"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
@@ -604,7 +604,7 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 10.0
         callback_group_id: 2
-      - name: "/zed/zed_node/right/color/rect/camera_info"
+      - name: "/zed/zed_node/right/color/raw/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
         mode: "typed"
@@ -612,7 +612,7 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 10.0
         callback_group_id: 2
-      - name: "/zed/zed_node/right/color/rect/image"
+      - name: "/zed/zed_node/right/color/raw/image"
         type: "sensor_msgs/msg/Image"
         qos: "sensor"
         mode: "typed"
@@ -620,39 +620,6 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 10.0
         callback_group_id: 2
-      
-      - name: "/zed/zed_node/odom"
-        type: "nav_msgs/msg/Odometry"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 10.0
-        callback_group_id: 0
-      - name: "/zed/zed_node/pose"
-        type: "geometry_msgs/msg/PoseStamped"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 10.0
-        callback_group_id: 0
-      - name: "/zed/zed_node/temperature/imu"
-        type: "sensor_msgs/msg/Temperature"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 1.0
-          warn_below_hz: .5
-        callback_group_id: 0
-      - name: "/zed/zed_node/status/heartbeat"
-        type: "zed_msgs/msg/Heartbeat"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 1.0
-          warn_below_hz: 0.5
-        callback_group_id: 0
       - name: "/zed/zed_node/status/health"
         type: "zed_msgs/msg/HealthStatusStamped"
         qos: "sensor"
@@ -661,22 +628,6 @@ bags:
           expected_hz: 15.0
           warn_below_hz: 10.0
         callback_group_id: 0
-      - name: "/zed/zed_node/pose/status"
-        type: "zed_msgs/msg/PosTrackStatus"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 10.0
-        callback_group_id: 0
-      - name: "/zed/zed_node/left_cam_imu_transform"
-        type: "geometry_msgs/msg/TransformStamped"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 100.0
-          warn_below_hz: 80.0
-        callback_group_id: 0
-
+      
 
       

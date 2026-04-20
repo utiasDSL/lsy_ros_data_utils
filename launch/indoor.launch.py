@@ -55,7 +55,7 @@ os.environ["RCUTILS_COLORIZED_OUTPUT"] = "1"
 default_config = os.path.join(
     get_package_share_directory('lsy_ros_data_utils'),
     'config',
-    'saberguide_bag_config_indoor.yaml'
+    'saberguide_bag_config_indoor_w_d456.yaml'
 )
 
 def call_zed_record_svo_service(svo_path):
@@ -63,7 +63,7 @@ def call_zed_record_svo_service(svo_path):
     service_name = "/zed/zed_node/start_svo_rec"
     service_type = "zed_msgs/srv/StartSvoRec"
     # Format the request as a YAML-style string
-    service_request = f"'{{svo_filename: \"{svo_path}\"}}'"
+    service_request = f"'{{svo_filename: \"{svo_path}\", compression_mode: 4}}'"
 
     return ExecuteProcess(
         cmd=[
