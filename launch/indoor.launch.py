@@ -55,7 +55,7 @@ os.environ["RCUTILS_COLORIZED_OUTPUT"] = "1"
 default_config = os.path.join(
     get_package_share_directory('lsy_ros_data_utils'),
     'config',
-    'saberguide_bag_config_indoor_w_d456.yaml'
+    'saberguide_bag_config_indoor.yaml'
 )
 
 def call_zed_record_svo_service(svo_path):
@@ -118,17 +118,19 @@ def launch_setup(context, *args, **kwargs):
         target_container=full_container_name,
         composable_node_descriptions=[bag_recorder_component]
     )
-    return_array.append(load_composable_node)
+    
 
     # Delay the service call by 10 seconds to ensure ZED is fully booted
     return_array.append(
         TimerAction(
-            period=2.0,
+            period=0.0,
             actions=[
                 call_zed_record_svo_service(svo_filename)
             ]
         )
     )
+
+    return_array.append(load_composable_node)
 
     return return_array
 

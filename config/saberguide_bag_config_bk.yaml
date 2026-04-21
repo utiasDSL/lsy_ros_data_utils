@@ -188,7 +188,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
-        callback_group_id: 1
+        callback_group_id: 0
 
       - name: "/rslidar/points"
         type: "sensor_msgs/msg/PointCloud2"
@@ -205,7 +205,7 @@ bags:
         monitor:
           expected_hz: 200.0
           warn_below_hz: 180.0
-        callback_group_id: 1
+        callback_group_id: 0
 
       ## septentrio
       - name: "/septentrio/attcoveuler"
@@ -215,7 +215,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/atteuler"
         type: "septentrio_gnss_driver/msg/AttEuler"
         qos: "default"
@@ -223,7 +223,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/beidou/ion"
         type: "septentrio_gnss_driver/msg/BDSIon"
         qos: "default"
@@ -231,7 +231,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: .0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/beidou/nav"
         type: "septentrio_gnss_driver/msg/BDSNav"
         qos: "default"
@@ -239,7 +239,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/beidou/utc"
         type: "septentrio_gnss_driver/msg/BDSUtc"
         qos: "default"
@@ -247,7 +247,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/diff_correction"
         type: "septentrio_gnss_driver/msg/DiffCorrIn"
         qos: "sensor"
@@ -255,7 +255,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/galileo/ion"
         type: "septentrio_gnss_driver/msg/GALIon"
         qos: "default"
@@ -263,7 +263,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: .0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/galileo/nav"
         type: "septentrio_gnss_driver/msg/GALNav"
         qos: "default"
@@ -271,7 +271,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: .0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/galileo/utc"
         type: "septentrio_gnss_driver/msg/GALUtc"
         qos: "default"
@@ -279,7 +279,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/glonass/nav"
         type: "septentrio_gnss_driver/msg/GLONav"
         qos: "default"
@@ -287,7 +287,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/glonass/time"
         type: "septentrio_gnss_driver/msg/GLOTime"
         qos: "default"
@@ -295,7 +295,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/gps/ion"
         type: "septentrio_gnss_driver/msg/GPSIon"
         qos: "default"
@@ -303,7 +303,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/gps/nav"
         type: "septentrio_gnss_driver/msg/GPSNav"
         qos: "default"
@@ -311,7 +311,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/gps/utc"
         type: "septentrio_gnss_driver/msg/GPSUtc"
         qos: "default"
@@ -319,7 +319,7 @@ bags:
         monitor:
           expected_hz: .1
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/gpsfix"
         type: "gps_msgs/msg/GPSFix"
         qos: "default"
@@ -327,7 +327,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/gpst"
         type: "sensor_msgs/msg/TimeReference"
         qos: "default"
@@ -335,7 +335,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/measepoch"
         type: "septentrio_gnss_driver/msg/MeasEpoch"
         qos: "default"
@@ -343,7 +343,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/measextra"
         type: "septentrio_gnss_driver/msg/MeasExtra"
         qos: "default"
@@ -351,7 +351,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/navsatfix"
         type: "sensor_msgs/msg/NavSatFix"
         qos: "default"
@@ -359,7 +359,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/ntrip_status"
         type: "septentrio_gnss_driver/msg/NTRIPClientStatus"
         qos: "default"
@@ -367,7 +367,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/poscovcartesian"
         type: "septentrio_gnss_driver/msg/PosCovCartesian"
         qos: "default"
@@ -375,7 +375,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/poscovgeodetic"
         type: "septentrio_gnss_driver/msg/PosCovGeodetic"
         qos: "default"
@@ -383,7 +383,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/pvtcartesian"
         type: "septentrio_gnss_driver/msg/PVTCartesian"
         qos: "default"
@@ -391,7 +391,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/pvtgeodetic"
         type: "septentrio_gnss_driver/msg/PVTGeodetic"
         qos: "default"
@@ -399,7 +399,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/quanlityind"
         type: "septentrio_gnss_driver/msg/QualityInd"
         qos: "default"
@@ -407,7 +407,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/receiverstatus"
         type: "septentrio_gnss_driver/msg/ReceiverStatus"
         qos: "default"
@@ -415,7 +415,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: 0.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/receivertime"
         type: "septentrio_gnss_driver/msg/ReceiverTime"
         qos: "default"
@@ -423,7 +423,7 @@ bags:
         monitor:
           expected_hz: 1.0
           warn_below_hz: .5
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/satellite_visibility"
         type: "septentrio_gnss_driver/msg/SatVisibility"
         qos: "default"
@@ -431,7 +431,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/velcovcartesian"
         type: "septentrio_gnss_driver/msg/VelCovCartesian"
         qos: "default"
@@ -439,7 +439,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
       - name: "/septentrio/velcovgeodetic"
         type: "septentrio_gnss_driver/msg/VelCovGeodetic"
         qos: "default"
@@ -447,7 +447,7 @@ bags:
         monitor:
           expected_hz: 10.0
           warn_below_hz: 9.0
-        callback_group_id: 2
+        callback_group_id: 0
 
   - name: "saberguide_realsense"
     bag_uri: "/home/user/00_bags"
@@ -466,87 +466,87 @@ bags:
     compression_type: "png"
     topics:
       # realsense
-      - name: "/rs456/camera/color/camera_info"
+      - name: "/D555/camera/color/camera_info"
         type: "sensor_msgs/msg/CameraInfo"
         qos: "sensor"
-        mode: "typed"
+        mode: "generic"
         monitor:
           expected_hz: 15.0
-          warn_below_hz: 12.0
-        callback_group_id: 2
-      - name: "/rs456/camera/color/image_raw"
-        type: "sensor_msgs/msg/Image"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 12.0
-        callback_group_id: 2
-      - name: "/rs456/camera/depth/camera_info"
-        type: "sensor_msgs/msg/CameraInfo"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 12.0
-        callback_group_id: 2
-      - name: "/rs456/camera/depth/image_rect_raw"
-        type: "sensor_msgs/msg/Image"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 12.0
-        callback_group_id: 2
-      - name: "/rs456/camera/infra1/camera_info"
-        type: "sensor_msgs/msg/CameraInfo"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 12.0
-        callback_group_id: 2
-      - name: "/rs456/camera/infra1/image_rect_raw"
-        type: "sensor_msgs/msg/Image"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 12.0
-        callback_group_id: 2
-      - name: "/rs456/camera/infra2/camera_info"
-        type: "sensor_msgs/msg/CameraInfo"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 12.0
-        callback_group_id: 2
-      - name: "/rs456/camera/infra2/image_rect_raw"
-        type: "sensor_msgs/msg/Image"
-        qos: "sensor"
-        mode: "typed"
-        monitor:
-          expected_hz: 15.0
-          warn_below_hz: 12.0
+          warn_below_hz: 14.0
         callback_group_id: 1
-      - name: "/rs456/camera/imu"
+      - name: "/D555/camera/color/image_raw/compressed"
+        type: "sensor_msgs/msg/CompressedImage"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 14.0
+        callback_group_id: 1
+      - name: "/D555/camera/depth/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 14.0
+        callback_group_id: 1
+      - name: "/D555/camera/depth/image_rect_raw/compressedDepth"
+        type: "sensor_msgs/msg/CompressedImage"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 14.0
+        callback_group_id: 1
+      - name: "/D555/camera/infra1/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 14.0
+        callback_group_id: 1
+      - name: "/D555/camera/infra1/image_rect_raw/compressed"
+        type: "sensor_msgs/msg/CompressedImage"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 14.0
+        callback_group_id: 1
+      - name: "/D555/camera/infra2/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 14.0
+        callback_group_id: 1
+      - name: "/D555/camera/infra2/image_rect_raw/compressed" 
+        type: "sensor_msgs/msg/CompressedImage"
+        qos: "sensor"
+        mode: "generic"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 14.0
+        callback_group_id: 1
+      - name: "/D555/camera/motion/sample"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
-        mode: "typed"
+        mode: "generic"
         monitor:
-          expected_hz: 200.0
-          warn_below_hz: 180.0
-        callback_group_id: 1
+          expected_hz: 100.0
+          warn_below_hz: 90.0
+        callback_group_id: 0
 
   - name: "saberguide_zed"
     bag_uri: "/home/user/00_bags"
     storage_id: "mcap"
     storage_config_file: "mcap_config.yaml"
     uri_with_datetime: true
-    max_queue_bytes: 1294967296     # 1GiB MiB
+    max_queue_bytes: 4294967296     # 1GiB MiB
     max_queue_size: 5000          # secondary cap
-    bag_cache_size: 1             # GB
+    bag_cache_size: 4             # GB
     overflow_policy: block  # or "block" drop_oldest
     warn_on_overflow: true
     overflow_warn_period_sec: 1.0
@@ -561,44 +561,122 @@ bags:
         qos: "sensor"
         mode: "typed"
         monitor:
-          expected_hz: 200.0
-          warn_below_hz: 180.0
-        callback_group_id: 1
+          expected_hz: 100.0
+          warn_below_hz: 80.0
+        callback_group_id: 0
       - name: "/zed/zed_node/imu/data_raw"
         type: "sensor_msgs/msg/Imu"
         qos: "sensor"
         mode: "typed"
         monitor:
-          expected_hz: 200.0
-          warn_below_hz: 180.0
+          expected_hz: 100.0
+          warn_below_hz: 80.0
+        callback_group_id: 0
+      - name: "/zed/zed_node/depth/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
         callback_group_id: 1
+      - name: "/zed/zed_node/depth/depth_registered"
+        type: "sensor_msgs/msg/Image"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 1
+      - name: "/zed/zed_node/left/color/rect/image/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 2
+      - name: "/zed/zed_node/left/color/rect/image"
+        type: "sensor_msgs/msg/Image"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 2
+      - name: "/zed/zed_node/right/color/rect/camera_info"
+        type: "sensor_msgs/msg/CameraInfo"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 2
+      - name: "/zed/zed_node/right/color/rect/image"
+        type: "sensor_msgs/msg/Image"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 2
       
-      #- name: "/zed/zed_node/depth/depth_registered"
-      #  type: "sensor_msgs/msg/Image"
-      #  qos: "sensor"
-      #  mode: "typed"
-      #  monitor:
-      #    expected_hz: 15.0
-      #    warn_below_hz: 10.0
-      #  callback_group_id: 1
-      
-      #- name: "/zed/zed_node/left/color/rect/image"
-      #  type: "sensor_msgs/msg/Image"
-      #  qos: "sensor"
-      #  mode: "typed"
-      #  monitor:
-      #    expected_hz: 15.0
-      #    warn_below_hz: 10.0
-      #  callback_group_id: 2
-     
-      #- name: "/zed/zed_node/right/color/rect/image"
-      #  type: "sensor_msgs/msg/Image"
-      #  qos: "sensor"
-      #  mode: "typed"
-      #  monitor:
-      #    expected_hz: 15.0
-      #    warn_below_hz: 10.0
-      #  callback_group_id: 2
+      - name: "/zed/zed_node/odom"
+        type: "nav_msgs/msg/Odometry"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 0
+      - name: "/zed/zed_node/pose"
+        type: "geometry_msgs/msg/PoseStamped"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 0
+      - name: "/zed/zed_node/temperature/imu"
+        type: "sensor_msgs/msg/Temperature"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 1.0
+          warn_below_hz: .5
+        callback_group_id: 0
+      - name: "/zed/zed_node/status/heartbeat"
+        type: "zed_msgs/msg/Heartbeat"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 1.0
+          warn_below_hz: 0.5
+        callback_group_id: 0
+      - name: "/zed/zed_node/status/health"
+        type: "zed_msgs/msg/HealthStatusStamped"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 0
+      - name: "/zed/zed_node/pose/status"
+        type: "zed_msgs/msg/PosTrackStatus"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 15.0
+          warn_below_hz: 10.0
+        callback_group_id: 0
+      - name: "/zed/zed_node/left_cam_imu_transform"
+        type: "geometry_msgs/msg/TransformStamped"
+        qos: "sensor"
+        mode: "typed"
+        monitor:
+          expected_hz: 100.0
+          warn_below_hz: 80.0
+        callback_group_id: 0
 
 
       
